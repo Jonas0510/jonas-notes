@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Jonas Notes</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="scripts/modules.js"></script>
+    <!-- PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        /* Additional viewer-specific styles */
+        body {
+            overflow: hidden;
+        }
+
+        .pdf-select {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 8px 15px;
+            color: var(--text-light);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            max-width: 300px;
+        }
+
+        .pdf-select option {
+            background: #1a1a1a;
+            color: var(--text-light);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-header {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-header:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        /* PDF Canvas styling */
+        #pdf-render-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        .pdf-page-canvas {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 100px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Chat message styles for future use */
+        .chat-message {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .chat-message.user {
+            background: var(--glass-bg-hover);
+            margin-left: 20px;
+        }
+
+        .chat-message.assistant {
+            background: var(--glass-bg);
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="viewer-header">
+        <div class="header-left">
+            <a id="back-btn" href="modules.html" class="btn-header">Back</a>
+            <h1 id="module-title">Module Name</h1>
+        </div>
+        <div class="header-center">
+            <select id="pdf-select" class="pdf-select">
+                <!-- PDF options will be populated dynamically -->
+            </select>
+        </div>
+        <div class="header-right">
+            <span id="page-info" style="color: var(--text-muted); font-size: 0.85rem;">Page 1 of 1</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="viewer-main">
+        <!-- Left Sidebar - Table of Contents -->
+        <div class="sidebar-left">
+            <h2>Documents</h2>
+            <ul id="toc-list" class="toc-list">
+                <!-- TOC items will be populated dynamically -->
+            </ul>
+        </div>
+
+        <!-- Center - PDF Viewer -->
+        <div class="pdf-container" id="pdf-container">
+            <!-- PDF Controls -->
+            <div class="pdf-controls">
+                <button id="zoom-out" title="Zoom Out">-</button>
+                <button id="zoom-reset" title="Reset Zoom">100%</button>
+                <button id="zoom-in" title="Zoom In">+</button>
+                <span>|</span>
+                <button id="prev-page" title="Previous Page">Prev</button>
+                <span id="page-num">1</span> / <span id="page-count">1</span>
+                <button id="next-page" title="Next Page">Next</button>
+            </div>
+
+            <!-- PDF Render Area -->
+            <div id="pdf-render-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Loading PDF...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - AI Chat Placeholder -->
+        <div class="sidebar-right">
+            <div class="chat-header">
+                <h2>AI Study Assistant</h2>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-placeholder">
+                    <p style="margin-bottom: 15px;">AI assistant coming soon!</p>
+                    <p>This will help answer questions about your notes using Gemini AI.</p>
+                    <p style="margin-top: 15px; font-size: 0.75rem;">The current PDF will automatically be shared with the AI for context.</p>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" placeholder="Ask a question..." disabled>
+                    <button class="chat-send" disabled title="Coming soon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const year = urlParams.get('year') || '1';
+        const moduleName = decodeURIComponent(urlParams.get('module') || '');
+        const initialPdf = urlParams.get('pdf');
+
+        // Update back button and title
+        document.getElementById('back-btn').href = 'index.html';
+        document.getElementById('module-title').textContent = moduleName;
+        document.title = `${moduleName} - Jonas Notes`;
+
+        // Get PDFs for this module
+        const pdfs = getPdfsForModule(year, moduleName);
+
+        // Populate PDF selector and TOC
+        const pdfSelect = document.getElementById('pdf-select');
+        const tocList = document.getElementById('toc-list');
+
+        pdfs.forEach((pdf, index) => {
+            // Add to select dropdown
+            const option = document.createElement('option');
+            option.value = pdf;
+            option.textContent = pdf.replace('.pdf', '');
+            pdfSelect.appendChild(option);
+
+            // Add to TOC list
+            const li = document.createElement('li');
+            li.className = 'toc-item' + (index === 0 ? ' active' : '');
+            li.textContent = pdf.replace('.pdf', '');
+            li.dataset.pdf = pdf;
+            li.addEventListener('click', () => loadPdf(pdf));
+            tocList.appendChild(li);
+        });
+
+        // PDF Viewer State
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let scale = 1.0;
+        let currentPdfName = '';
+
+        // DOM Elements
+        const pdfContainer = document.getElementById('pdf-container');
+        const renderContainer = document.getElementById('pdf-render-container');
+        const pageNum = document.getElementById('page-num');
+        const pageCount = document.getElementById('page-count');
+        const pageInfo = document.getElementById('page-info');
+        const zoomReset = document.getElementById('zoom-reset');
+
+        // Disable right-click on PDF container
+        pdfContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        });
+
+        // Load PDF function
+        async function loadPdf(pdfName) {
+            currentPdfName = pdfName;
+            const pdfPath = getPdfPath(year, moduleName, pdfName);
+
+            // Update UI
+            pdfSelect.value = pdfName;
+            updateTocHighlight(pdfName);
+            renderContainer.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading PDF...</span></div>';
+
+            try {
+                // Load PDF
+                const loadingTask = pdfjsLib.getDocument(pdfPath);
+                pdfDoc = await loadingTask.promise;
+                totalPages = pdfDoc.numPages;
+
+                // Update page info
+                currentPage = 1;
+                updatePageInfo();
+
+                // Render all pages
+                renderContainer.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    await renderPage(i);
+                }
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                renderContainer.innerHTML = `
+                    <div class="loading">
+                        <p style="color: #ff6b6b;">Error loading PDF</p>
+                        <p style="font-size: 0.8rem; margin-top: 10px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render a single page with high DPI support
+        async function renderPage(pageNumber) {
+            const page = await pdfDoc.getPage(pageNumber);
+
+            // Get device pixel ratio for sharp rendering
+            const pixelRatio = window.devicePixelRatio || 1;
+            const viewport = page.getViewport({ scale: scale * pixelRatio });
+
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pdf-page-canvas';
+            canvas.dataset.page = pageNumber;
+
+            // Set canvas size to high resolution
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            // Scale down with CSS for display (this keeps it sharp)
+            canvas.style.width = (viewport.width / pixelRatio) + 'px';
+            canvas.style.height = (viewport.height / pixelRatio) + 'px';
+
+            const context = canvas.getContext('2d');
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+            renderContainer.appendChild(canvas);
+        }
+
+        // Re-render all pages with new scale
+        async function reRenderAllPages() {
+            if (!pdfDoc) return;
+
+            renderContainer.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                await renderPage(i);
+            }
+        }
+
+        // Update page info display
+        function updatePageInfo() {
+            pageNum.textContent = currentPage;
+            pageCount.textContent = totalPages;
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        }
+
+        // Update TOC highlight
+        function updateTocHighlight(pdfName) {
+            document.querySelectorAll('.toc-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.pdf === pdfName) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Zoom controls
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            if (scale < 3) {
+                scale += 0.25;
+                zoomReset.textContent = Math.round(scale * 100) + '%';
+                reRenderAllPages();
+            }
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            if (scale > 0.5) {
+                scale -= 0.25;
+                zoomReset.textContent = Math.round(scale * 100) + '%';
+                reRenderAllPages();
+            }
+        });
+
+        document.getElementById('zoom-reset').addEventListener('click', () => {
+            scale = 1.0;
+            zoomReset.textContent = '100%';
+            reRenderAllPages();
+        });
+
+        // Page navigation
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                scrollToPage(currentPage);
+                updatePageInfo();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                scrollToPage(currentPage);
+                updatePageInfo();
+            }
+        });
+
+        // Scroll to specific page
+        function scrollToPage(pageNumber) {
+            const canvas = renderContainer.querySelector(`canvas[data-page="${pageNumber}"]`);
+            if (canvas) {
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Track current page on scroll
+        pdfContainer.addEventListener('scroll', () => {
+            const canvases = renderContainer.querySelectorAll('canvas');
+            const containerRect = pdfContainer.getBoundingClientRect();
+
+            for (const canvas of canvases) {
+                const rect = canvas.getBoundingClientRect();
+                // Check if canvas is in view
+                if (rect.top <= containerRect.top + 100 && rect.bottom > containerRect.top + 100) {
+                    const pageNum = parseInt(canvas.dataset.page);
+                    if (pageNum !== currentPage) {
+                        currentPage = pageNum;
+                        updatePageInfo();
+                    }
+                    break;
+                }
+            }
+        });
+
+        // PDF selector change
+        pdfSelect.addEventListener('change', (e) => {
+            loadPdf(e.target.value);
+        });
+
+        // Load initial PDF
+        if (pdfs.length > 0) {
+            const pdfToLoad = initialPdf && pdfs.includes(initialPdf) ? initialPdf : pdfs[0];
+            loadPdf(pdfToLoad);
+        } else {
+            renderContainer.innerHTML = '<div class="loading"><p>No PDFs available for this module.</p></div>';
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                document.getElementById('prev-page').click();
+            } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+                document.getElementById('next-page').click();
+            } else if (e.key === '+' || e.key === '=') {
+                document.getElementById('zoom-in').click();
+            } else if (e.key === '-') {
+                document.getElementById('zoom-out').click();
+            }
+        });
+    </script>
+</body>
+</html>
