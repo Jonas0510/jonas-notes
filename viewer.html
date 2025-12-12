@@ -123,6 +123,97 @@
             background: var(--glass-bg);
             margin-right: 20px;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            /* Hide sidebars on mobile */
+            .sidebar-left,
+            .sidebar-right {
+                display: none !important;
+            }
+
+            /* Full width PDF container */
+            .pdf-container {
+                width: 100% !important;
+                padding: 10px;
+            }
+
+            /* Simplified header for mobile */
+            .viewer-header {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .header-left {
+                order: 1;
+                gap: 10px;
+            }
+
+            .header-left h1 {
+                font-size: 0.75rem;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .header-center {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header-right {
+                order: 2;
+                margin-left: auto;
+            }
+
+            .pdf-select {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .btn-header {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+
+            #page-info {
+                font-size: 0.7rem !important;
+            }
+
+            /* Adjust main area for mobile header */
+            .viewer-main {
+                height: calc(100vh - 100px);
+                margin-top: 100px;
+            }
+
+            /* Smaller controls on mobile */
+            .pdf-controls {
+                padding: 8px 12px;
+                gap: 8px;
+                font-size: 0.8rem;
+            }
+
+            .pdf-controls button {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+
+            /* PDF pages fit to screen width */
+            .pdf-page-canvas {
+                max-width: 100% !important;
+                height: auto !important;
+                width: auto !important;
+            }
+
+            #pdf-render-container {
+                padding: 10px;
+                gap: 15px;
+            }
+        }
     </style>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
@@ -297,13 +388,28 @@
             }
         }
 
-        // Render a single page with high DPI support
+        // Check if mobile device
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Render a single page with high DPI support and mobile scaling
         async function renderPage(pageNumber) {
             const page = await pdfDoc.getPage(pageNumber);
 
             // Get device pixel ratio for sharp rendering
             const pixelRatio = window.devicePixelRatio || 1;
-            const viewport = page.getViewport({ scale: scale * pixelRatio });
+
+            // Calculate scale for mobile to fit screen width
+            let renderScale = scale;
+            if (isMobile()) {
+                const containerWidth = pdfContainer.clientWidth - 20; // Account for padding
+                const defaultViewport = page.getViewport({ scale: 1 });
+                // Scale to fit width, works for both portrait and landscape PDFs
+                renderScale = containerWidth / defaultViewport.width;
+            }
+
+            const viewport = page.getViewport({ scale: renderScale * pixelRatio });
 
             const canvas = document.createElement('canvas');
             canvas.className = 'pdf-page-canvas';
@@ -445,6 +551,17 @@
             } else if (e.key === '-') {
                 document.getElementById('zoom-out').click();
             }
+        });
+
+        // Re-render on orientation change / resize (for mobile)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (pdfDoc) {
+                    reRenderAllPages();
+                }
+            }, 300);
         });
     </script>
 </body>
