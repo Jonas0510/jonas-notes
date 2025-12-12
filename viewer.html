@@ -163,15 +163,13 @@
                 justify-content: center;
             }
 
-            /* Compact dropdown - just icon button on mobile */
+            /* Compact dropdown on mobile */
             .pdf-select {
-                width: 36px;
-                height: 36px;
-                padding: 0;
-                border-radius: 50%;
-                text-indent: -9999px;
-                background: var(--glass-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center no-repeat;
-                cursor: pointer;
+                width: auto;
+                min-width: 36px;
+                max-width: 120px;
+                padding: 6px 10px;
+                font-size: 0;
             }
 
             .header-right {
