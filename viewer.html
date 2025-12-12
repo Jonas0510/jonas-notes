@@ -163,24 +163,27 @@
                 justify-content: center;
             }
 
-            /* Compact dropdown on mobile */
+            /* Compact dropdown on mobile - match back button height */
             .pdf-select {
                 width: auto;
                 min-width: 36px;
                 max-width: 120px;
-                padding: 6px 10px;
+                padding: 6px 12px;
                 font-size: 0;
+                height: 32px;
+            }
+
+            .btn-header {
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
             .header-right {
                 order: 3;
                 margin-left: auto;
                 flex-shrink: 0;
-            }
-
-            .btn-header {
-                padding: 6px 12px;
-                font-size: 0.75rem;
             }
 
             #page-info {
