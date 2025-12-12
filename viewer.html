@@ -138,41 +138,46 @@
                 padding: 10px;
             }
 
-            /* Simplified header for mobile */
+            /* Simplified header for mobile - single row */
             .viewer-header {
-                flex-wrap: wrap;
-                height: auto;
-                padding: 10px 15px;
-                gap: 10px;
+                flex-wrap: nowrap;
+                height: 50px;
+                padding: 8px 12px;
+                gap: 8px;
             }
 
             .header-left {
                 order: 1;
-                gap: 10px;
+                gap: 8px;
+                flex-shrink: 0;
             }
 
+            /* Hide module title on mobile */
             .header-left h1 {
-                font-size: 0.75rem;
-                max-width: 150px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                display: none;
             }
 
             .header-center {
-                order: 3;
-                width: 100%;
+                order: 2;
+                flex: 0;
                 justify-content: center;
             }
 
-            .header-right {
-                order: 2;
-                margin-left: auto;
+            /* Compact dropdown - just icon button on mobile */
+            .pdf-select {
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 50%;
+                text-indent: -9999px;
+                background: var(--glass-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center no-repeat;
+                cursor: pointer;
             }
 
-            .pdf-select {
-                max-width: 100%;
-                width: 100%;
+            .header-right {
+                order: 3;
+                margin-left: auto;
+                flex-shrink: 0;
             }
 
             .btn-header {
@@ -181,13 +186,14 @@
             }
 
             #page-info {
-                font-size: 0.7rem !important;
+                font-size: 0.75rem !important;
+                white-space: nowrap;
             }
 
             /* Adjust main area for mobile header */
             .viewer-main {
-                height: calc(100vh - 100px);
-                margin-top: 100px;
+                height: calc(100vh - 50px);
+                margin-top: 50px;
             }
 
             /* Smaller controls on mobile */
