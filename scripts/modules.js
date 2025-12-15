@@ -59,6 +59,10 @@ const MODULES = {
         ]
     },
     "Year 3": {
+        "Environmental Engineering": [
+            "Environmental Notes.pdf",
+            "Exam Preparation (Full).pdf"
+        ],
         "Traffic Engineering": [
             "Traffic Engineering Notes.pdf"
         ],
