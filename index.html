@@ -178,6 +178,96 @@
             background: rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
+
+        /* Announcement Board */
+        .announcement-board {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            max-width: 400px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .announcement-title {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .announcement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .announcement-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .announcement-date {
+            color: rgba(136, 204, 255, 0.9);
+            font-size: 0.7rem;
+            white-space: nowrap;
+            min-width: 70px;
+        }
+
+        .announcement-content {
+            flex: 1;
+        }
+
+        .announcement-content .title {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .announcement-content .subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.7rem;
+        }
+
+        .see-more {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .see-more:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @media (max-width: 480px) {
+            .announcement-board {
+                max-width: 300px;
+                padding: 15px;
+            }
+
+            .announcement-date {
+                min-width: 60px;
+                font-size: 0.65rem;
+            }
+
+            .announcement-content .title {
+                font-size: 0.75rem;
+            }
+        }
     </style>
     <!-- Import Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -188,6 +278,13 @@
 <body>
 
     <div id="ui-container">
+        <div class="announcement-board">
+            <div class="announcement-title">Announcements</div>
+            <div id="announcement-list" class="announcement-list">
+                <!-- Announcements will be loaded dynamically -->
+            </div>
+            <a href="announcements.html" class="see-more">See all announcements</a>
+        </div>
         <button id="enter-btn">Enter Website</button>
     </div>
 
@@ -629,6 +726,46 @@
             void yearContainer.offsetWidth;
             yearContainer.classList.add('visible');
         }
+
+        // --- Announcement Functions ---
+        const DEFAULT_ANNOUNCEMENTS = [
+            { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
+            { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
+            { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }
+        ];
+
+        function loadAnnouncements() {
+            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements'));
+
+            // If no announcements in storage, use defaults
+            if (!announcements || announcements.length === 0) {
+                announcements = DEFAULT_ANNOUNCEMENTS;
+                localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
+            }
+
+            // Show only the 3 most recent
+            const recentAnnouncements = announcements.slice(0, 3);
+            const announcementList = document.getElementById('announcement-list');
+
+            announcementList.innerHTML = recentAnnouncements.map(a => `
+                <div class="announcement-item">
+                    <span class="announcement-date">${a.date}</span>
+                    <div class="announcement-content">
+                        <div class="title">${escapeHtml(a.title)}</div>
+                        ${a.subtitle ? `<div class="subtitle">${escapeHtml(a.subtitle)}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load announcements on page load
+        loadAnnouncements();
 
     </script>
 </body>

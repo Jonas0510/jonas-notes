@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements - Jonas Academy</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        body {
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        .page-title {
+            color: #fff;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .announcement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .announcement-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .announcement-card:hover {
+            border-color: rgba(136, 204, 255, 0.5);
+        }
+
+        .announcement-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .announcement-date {
+            background: rgba(136, 204, 255, 0.2);
+            color: #88ccff;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+        }
+
+        .announcement-title {
+            color: #fff;
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        .announcement-subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-left: 90px;
+        }
+
+        .no-announcements {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 60px 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .page-title {
+                font-size: 1.2rem;
+            }
+
+            .announcement-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .announcement-subtitle {
+                margin-left: 0;
+            }
+        }
+    </style>
+    <!-- Vercel Analytics -->
+    <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="btn-back">Back</a>
+            <h1 class="page-title">All Announcements</h1>
+        </div>
+
+        <div id="announcement-list" class="announcement-list">
+            <p class="no-announcements">Loading announcements...</p>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_ANNOUNCEMENTS = [
+            { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
+            { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
+            { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }
+        ];
+
+        function loadAnnouncements() {
+            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements'));
+
+            // If no announcements in storage, use defaults
+            if (!announcements || announcements.length === 0) {
+                announcements = DEFAULT_ANNOUNCEMENTS;
+                localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
+            }
+
+            const announcementList = document.getElementById('announcement-list');
+
+            if (announcements.length === 0) {
+                announcementList.innerHTML = '<p class="no-announcements">No announcements yet.</p>';
+                return;
+            }
+
+            announcementList.innerHTML = announcements.map(a => `
+                <div class="announcement-card">
+                    <div class="announcement-header">
+                        <span class="announcement-date">${a.date}</span>
+                        <span class="announcement-title">${escapeHtml(a.title)}</span>
+                    </div>
+                    ${a.subtitle ? `<p class="announcement-subtitle">${escapeHtml(a.subtitle)}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load announcements on page load
+        loadAnnouncements();
+    </script>
+</body>
+</html>
