@@ -220,6 +220,161 @@
                 padding: 10px;
                 gap: 15px;
             }
+
+            /* Report button on mobile */
+            .btn-report {
+                padding: 6px 10px;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Report Button */
+        .btn-report {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.5);
+            color: #ff9999;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .btn-report:hover {
+            background: rgba(255, 100, 100, 0.3);
+            box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
+        }
+
+        /* Report Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input[readonly] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-submit {
+            flex: 1;
+            background: var(--accent-blue);
+            border: none;
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 20px rgba(136, 204, 255, 0.4);
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        .success-message {
+            color: #66ff66;
+            text-align: center;
+            padding: 20px;
+            display: none;
         }
     </style>
     <!-- Vercel Analytics -->
@@ -239,6 +394,35 @@
         </div>
         <div class="header-right">
             <span id="page-info" style="color: var(--text-muted); font-size: 0.85rem;">Page 1 of 1</span>
+            <button id="report-btn" class="btn-report">Report</button>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="modal-title">Report an Error</h3>
+            <form id="report-form" class="modal-form">
+                <div class="form-group">
+                    <label>PDF Document</label>
+                    <input type="text" id="report-pdf" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Page Number</label>
+                    <input type="number" id="report-page" min="1" placeholder="Enter page number" required>
+                </div>
+                <div class="form-group">
+                    <label>Error Description</label>
+                    <textarea id="report-description" placeholder="Describe the error you found..." required></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" id="cancel-report" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-submit">Submit Report</button>
+                </div>
+            </form>
+            <div id="success-message" class="success-message">
+                <p>Thank you! Your report has been submitted.</p>
+            </div>
         </div>
     </div>
 
@@ -569,6 +753,79 @@
                     reRenderAllPages();
                 }
             }, 300);
+        });
+
+        // Report Modal Functionality
+        const reportModal = document.getElementById('report-modal');
+        const reportBtn = document.getElementById('report-btn');
+        const reportForm = document.getElementById('report-form');
+        const cancelReport = document.getElementById('cancel-report');
+        const reportPdf = document.getElementById('report-pdf');
+        const reportPage = document.getElementById('report-page');
+        const reportDescription = document.getElementById('report-description');
+        const successMessage = document.getElementById('success-message');
+
+        // Open report modal
+        reportBtn.addEventListener('click', () => {
+            reportPdf.value = currentPdfName;
+            reportPage.value = currentPage;
+            reportPage.max = totalPages;
+            reportForm.style.display = 'flex';
+            successMessage.style.display = 'none';
+            reportModal.classList.add('active');
+        });
+
+        // Close report modal
+        cancelReport.addEventListener('click', () => {
+            reportModal.classList.remove('active');
+        });
+
+        // Close on overlay click
+        reportModal.addEventListener('click', (e) => {
+            if (e.target === reportModal) {
+                reportModal.classList.remove('active');
+            }
+        });
+
+        // Submit report
+        reportForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Create report object
+            const report = {
+                id: Date.now(),
+                pdf: reportPdf.value,
+                module: moduleName,
+                year: year,
+                page: parseInt(reportPage.value),
+                description: reportDescription.value,
+                timestamp: new Date().toISOString(),
+                resolved: false
+            };
+
+            // Get existing reports from localStorage
+            const reports = JSON.parse(localStorage.getItem('jonasnotes_reports') || '[]');
+            reports.push(report);
+            localStorage.setItem('jonasnotes_reports', JSON.stringify(reports));
+
+            // Show success message
+            reportForm.style.display = 'none';
+            successMessage.style.display = 'block';
+
+            // Reset form
+            reportDescription.value = '';
+
+            // Close modal after delay
+            setTimeout(() => {
+                reportModal.classList.remove('active');
+            }, 1500);
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && reportModal.classList.contains('active')) {
+                reportModal.classList.remove('active');
+            }
         });
     </script>
 </body>
