@@ -39,7 +39,6 @@
             text-transform: uppercase;
             cursor: pointer;
             backdrop-filter: blur(5px);
-            transition: all 0.5s ease;
             border-radius: 30px;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
         }
@@ -48,12 +47,6 @@
             background: rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
             letter-spacing: 6px;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none !important;
-            transform: scale(0.9);
         }
 
         /* Year selection overlay */
@@ -191,6 +184,35 @@
             text-align: left;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .announcement-board.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .announcement-board.fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        #enter-btn {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s ease, transform 0.8s ease, background 0.5s ease, box-shadow 0.5s ease, letter-spacing 0.5s ease;
+        }
+
+        #enter-btn.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #enter-btn.fade-out {
+            opacity: 0;
+            transform: scale(0.9);
         }
 
         .announcement-title {
@@ -581,10 +603,20 @@
         function startTransition() {
             if (isTransitioning || isTreeFormed) return;
             const btn = document.getElementById('enter-btn');
-            btn.classList.add('hidden');
-            startRotation.copy(group.rotation);
-            isTransitioning = true;
-            transitionTime = 0;
+            const announcementBoard = document.querySelector('.announcement-board');
+
+            // Fade out both elements
+            btn.classList.add('fade-out');
+            btn.classList.remove('visible');
+            announcementBoard.classList.add('fade-out');
+            announcementBoard.classList.remove('visible');
+
+            // Wait for fade out to complete before starting animation
+            setTimeout(() => {
+                startRotation.copy(group.rotation);
+                isTransitioning = true;
+                transitionTime = 0;
+            }, 800);
         }
 
         function easeInOutQuad(x) {
@@ -766,6 +798,22 @@
 
         // Load announcements on page load
         loadAnnouncements();
+
+        // Fade in announcement board, then enter button
+        window.addEventListener('load', () => {
+            const announcementBoard = document.querySelector('.announcement-board');
+            const enterBtn = document.getElementById('enter-btn');
+
+            // Fade in announcement board first
+            setTimeout(() => {
+                announcementBoard.classList.add('visible');
+            }, 300);
+
+            // Fade in enter button after 1 second delay
+            setTimeout(() => {
+                enterBtn.classList.add('visible');
+            }, 1300);
+        });
 
     </script>
 </body>
