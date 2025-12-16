@@ -1113,9 +1113,9 @@
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
 
-            // Hide year selection
-            yearContainer.style.display = 'none';
+            // Hide year selection (remove class and clear any inline style)
             yearContainer.classList.remove('visible');
+            yearContainer.style.display = '';
 
             // Reset animation state to allow "Enter Website" to work again
             isTreeFormed = false;
