@@ -63,6 +63,9 @@ const MODULES = {
             "Environmental Notes.pdf",
             "Exam Preparation (Full).pdf"
         ],
+        "Fluid Mechanics": [
+            "Fluid Mechanics Notes.pdf"
+        ],
         "Traffic Engineering": [
             "Traffic Engineering Notes.pdf"
         ],

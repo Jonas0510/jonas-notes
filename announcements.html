@@ -101,13 +101,21 @@
 
         @media (max-width: 480px) {
             .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
             }
 
             .page-title {
-                font-size: 1.2rem;
+                font-size: 1rem;
+                letter-spacing: 1px;
+            }
+
+            .btn-back {
+                padding: 8px 15px;
+                font-size: 0.8rem;
+                flex-shrink: 0;
             }
 
             .announcement-header {
@@ -138,6 +146,7 @@
 
     <script>
         const DEFAULT_ANNOUNCEMENTS = [
+            { date: '16/12/2024', title: 'Added Fluid Mechanics year 3 notes', subtitle: '' },
             { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
             { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
             { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }

@@ -493,8 +493,8 @@
         const moduleName = decodeURIComponent(urlParams.get('module') || '');
         const initialPdf = urlParams.get('pdf');
 
-        // Update back button and title
-        document.getElementById('back-btn').href = 'index.html';
+        // Update back button to go to module selection for this year
+        document.getElementById('back-btn').href = `index.html?year=${year}`;
         document.getElementById('module-title').textContent = moduleName;
         document.title = `${moduleName} - Jonas Notes`;
 

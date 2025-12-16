@@ -1006,6 +1006,28 @@
         // --- Navigation Functions ---
         let currentYear = null;
 
+        // Check for URL parameters (e.g., when returning from viewer)
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnToYear = urlParams.get('year');
+
+        // If returning from viewer with a year parameter, skip to modules view
+        if (returnToYear) {
+            // Hide initial UI elements immediately
+            document.querySelector('.announcement-board').style.display = 'none';
+            document.getElementById('guest-buttons').style.display = 'none';
+            document.getElementById('user-buttons').style.display = 'none';
+
+            // Set tree as formed and show modules directly
+            isTreeFormed = true;
+            if (snowGroup) snowGroup.material.opacity = 0.6;
+            if (bgStarGroup) bgStarGroup.material.uniforms.globalOpacity.value = 0.8;
+
+            // Show modules for the specified year after a brief delay
+            setTimeout(() => {
+                showModules(returnToYear);
+            }, 100);
+        }
+
         function showModules(year) {
             currentYear = year;
             const modules = getModulesForYear(year);
@@ -1061,6 +1083,7 @@
 
         // --- Announcement Functions ---
         const DEFAULT_ANNOUNCEMENTS = [
+            { date: '16/12/2024', title: 'Added Fluid Mechanics year 3 notes', subtitle: '' },
             { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
             { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
             { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }
