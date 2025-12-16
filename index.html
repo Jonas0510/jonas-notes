@@ -60,6 +60,15 @@
             display: none; /* Hidden by default - not rendered */
         }
 
+        #year-container .btn-back {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            margin-bottom: 25px;
+            display: block;
+        }
+
         #year-container.visible {
             display: block;
             animation: fadeIn 1s ease forwards;
@@ -604,6 +613,7 @@
 
     <!-- Year selection overlay (hidden initially) -->
     <div id="year-container">
+        <button class="btn-back" onclick="backToLanding()">Back</button>
         <div class="btn-grid">
             <button class="btn-glass" onclick="showModules(1)">Year 1</button>
             <button class="btn-glass" onclick="showModules(2)">Year 2</button>
@@ -1095,6 +1105,38 @@
             // Force reflow to restart animation
             void yearContainer.offsetWidth;
             yearContainer.classList.add('visible');
+        }
+
+        function backToLanding() {
+            const yearContainer = document.getElementById('year-container');
+            const announcementBoard = document.querySelector('.announcement-board');
+            const guestButtons = document.getElementById('guest-buttons');
+            const userButtons = document.getElementById('user-buttons');
+
+            // Hide year selection
+            yearContainer.style.display = 'none';
+            yearContainer.classList.remove('visible');
+
+            // Show announcement board with fade-in
+            announcementBoard.style.display = 'block';
+            announcementBoard.classList.remove('fade-out');
+            void announcementBoard.offsetWidth;
+            announcementBoard.classList.add('visible');
+
+            // Show appropriate auth buttons with fade-in
+            setTimeout(() => {
+                if (isLoggedIn()) {
+                    userButtons.style.display = 'flex';
+                    userButtons.classList.remove('fade-out');
+                    void userButtons.offsetWidth;
+                    userButtons.classList.add('visible');
+                } else {
+                    guestButtons.style.display = 'flex';
+                    guestButtons.classList.remove('fade-out');
+                    void guestButtons.offsetWidth;
+                    guestButtons.classList.add('visible');
+                }
+            }, 300);
         }
 
         // --- Announcement Functions ---
