@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Jonas Academy</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .signup-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .signup-title {
+            color: #fff;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .signup-subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Social Login */
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .social-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            gap: 15px;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        .divider-text {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Form */
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .form-group label .required {
+            color: #ff6b6b;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 15px;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-group select option {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-error {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        .form-error.visible {
+            display: block;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            background: var(--accent-blue);
+            border: none;
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 25px rgba(136, 204, 255, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Footer */
+        .signup-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .signup-footer p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .signup-footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .signup-footer a:hover {
+            opacity: 0.8;
+        }
+
+        /* Back button */
+        .btn-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        /* Terms */
+        .terms {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .terms a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 30px 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .signup-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+    <!-- Vercel Analytics -->
+    <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+    <a href="index.html" class="btn-back">Back</a>
+
+    <div class="signup-container">
+        <div class="signup-header">
+            <h1 class="signup-title">Create Account</h1>
+            <p class="signup-subtitle">Join Jonas Academy to access study materials</p>
+        </div>
+
+        <!-- Social Login Options -->
+        <div class="social-login">
+            <button type="button" class="social-btn" id="google-signup">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+        </div>
+
+        <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">or sign up with email</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <!-- Signup Form -->
+        <form id="signup-form" class="signup-form">
+            <div class="form-group">
+                <label>Full Name <span class="required">*</span></label>
+                <input type="text" id="fullName" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email <span class="required">*</span></label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password <span class="required">*</span></label>
+                <input type="password" id="password" placeholder="Create a password" minlength="6" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date of Birth <span class="required">*</span></label>
+                    <input type="date" id="dob" required>
+                </div>
+                <div class="form-group">
+                    <label>Age <span class="required">*</span></label>
+                    <input type="number" id="age" placeholder="Age" min="13" max="120" required>
+                </div>
+            </div>
+
+            <p id="form-error" class="form-error"></p>
+
+            <p class="terms">
+                By signing up, you agree to our Terms of Service and Privacy Policy.
+            </p>
+
+            <button type="submit" class="btn-submit">Create Account</button>
+        </form>
+
+        <div class="signup-footer">
+            <p>Already have an account? <a href="login.html">Log in</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-calculate age from DOB
+        document.getElementById('dob').addEventListener('change', function() {
+            const dob = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+
+            if (age >= 0 && age <= 120) {
+                document.getElementById('age').value = age;
+            }
+        });
+
+        // Form submission
+        document.getElementById('signup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const dob = document.getElementById('dob').value;
+            const age = parseInt(document.getElementById('age').value);
+            const errorEl = document.getElementById('form-error');
+
+            // Validation
+            if (fullName.length < 2) {
+                errorEl.textContent = 'Please enter your full name';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            if (age < 13) {
+                errorEl.textContent = 'You must be at least 13 years old to sign up';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            if (password.length < 6) {
+                errorEl.textContent = 'Password must be at least 6 characters';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            // Check if email already exists
+            const existingUsers = JSON.parse(localStorage.getItem('jonasnotes_users') || '[]');
+            if (existingUsers.some(u => u.email === email)) {
+                errorEl.textContent = 'An account with this email already exists';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            // Create user object
+            const user = {
+                id: Date.now(),
+                fullName: fullName,
+                email: email,
+                password: password, // In production, this should be hashed!
+                dob: dob,
+                age: age,
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to users list
+            existingUsers.push(user);
+            localStorage.setItem('jonasnotes_users', JSON.stringify(existingUsers));
+
+            // Log user in
+            const sessionUser = {
+                id: user.id,
+                fullName: user.fullName,
+                email: user.email,
+                age: user.age
+            };
+            localStorage.setItem('jonasnotes_user', JSON.stringify(sessionUser));
+
+            // Redirect to home
+            window.location.href = 'index.html';
+        });
+
+        // Google Sign Up (placeholder - would need Firebase or similar)
+        document.getElementById('google-signup').addEventListener('click', function() {
+            alert('Google Sign Up will be available soon. Please use email signup for now.');
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('jonasnotes_user')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

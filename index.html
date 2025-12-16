@@ -215,6 +215,105 @@
             transform: scale(0.9);
         }
 
+        /* Auth Buttons Container */
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .auth-buttons.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .auth-buttons.fade-out {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .auth-btn {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #fff;
+            padding: 12px 35px;
+            font-size: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 25px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+            transition: background 0.3s ease, box-shadow 0.3s ease, letter-spacing 0.3s ease;
+            min-width: 200px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .auth-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+            letter-spacing: 4px;
+        }
+
+        .auth-btn.primary {
+            background: rgba(136, 204, 255, 0.2);
+            border-color: rgba(136, 204, 255, 0.5);
+        }
+
+        .auth-btn.primary:hover {
+            background: rgba(136, 204, 255, 0.3);
+            box-shadow: 0 0 25px rgba(136, 204, 255, 0.4);
+        }
+
+        .auth-btn.secondary {
+            padding: 10px 30px;
+            font-size: 0.85rem;
+            min-width: 180px;
+        }
+
+        .auth-btn-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* User Welcome */
+        .user-welcome {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .user-welcome strong {
+            color: rgba(136, 204, 255, 0.9);
+        }
+
+        @media (max-width: 480px) {
+            .auth-btn-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .auth-btn {
+                min-width: 180px;
+                padding: 10px 25px;
+                font-size: 0.9rem;
+            }
+
+            .auth-btn.secondary {
+                min-width: 160px;
+            }
+        }
+
         .announcement-title {
             color: rgba(255, 255, 255, 0.9);
             font-size: 0.8rem;
@@ -307,7 +406,22 @@
             </div>
             <a href="announcements.html" class="see-more">See all announcements</a>
         </div>
-        <button id="enter-btn">Enter Website</button>
+
+        <!-- Auth Buttons - shown when NOT logged in -->
+        <div id="guest-buttons" class="auth-buttons">
+            <button id="enter-btn" class="auth-btn primary">Enter as Guest</button>
+            <div class="auth-btn-row">
+                <a href="login.html" class="auth-btn secondary">Login</a>
+                <a href="signup.html" class="auth-btn secondary">Sign Up</a>
+            </div>
+        </div>
+
+        <!-- Auth Buttons - shown when logged in -->
+        <div id="user-buttons" class="auth-buttons" style="display: none;">
+            <div class="user-welcome">Welcome back, <strong id="user-name">User</strong></div>
+            <button id="enter-btn-user" class="auth-btn primary">Enter Website</button>
+            <button id="logout-btn" class="auth-btn secondary">Logout</button>
+        </div>
     </div>
 
     <!-- Year selection overlay (hidden initially) -->
@@ -482,7 +596,6 @@
 
             // Event Listeners
             window.addEventListener('resize', onWindowResize, false);
-            document.getElementById('enter-btn').addEventListener('click', startTransition);
 
             animate();
         }
@@ -602,14 +715,23 @@
 
         function startTransition() {
             if (isTransitioning || isTreeFormed) return;
-            const btn = document.getElementById('enter-btn');
             const announcementBoard = document.querySelector('.announcement-board');
+            const guestButtons = document.getElementById('guest-buttons');
+            const userButtons = document.getElementById('user-buttons');
 
-            // Fade out both elements
-            btn.classList.add('fade-out');
-            btn.classList.remove('visible');
+            // Fade out all UI elements
             announcementBoard.classList.add('fade-out');
             announcementBoard.classList.remove('visible');
+
+            if (guestButtons.style.display !== 'none') {
+                guestButtons.classList.add('fade-out');
+                guestButtons.classList.remove('visible');
+            }
+
+            if (userButtons.style.display !== 'none') {
+                userButtons.classList.add('fade-out');
+                userButtons.classList.remove('visible');
+            }
 
             // Wait for fade out to complete before starting animation
             setTimeout(() => {
@@ -799,21 +921,68 @@
         // Load announcements on page load
         loadAnnouncements();
 
-        // Fade in announcement board, then enter button
+        // --- Authentication Functions ---
+        function getUser() {
+            const userJson = localStorage.getItem('jonasnotes_user');
+            return userJson ? JSON.parse(userJson) : null;
+        }
+
+        function isLoggedIn() {
+            return getUser() !== null;
+        }
+
+        function logout() {
+            localStorage.removeItem('jonasnotes_user');
+            location.reload();
+        }
+
+        // Check auth state and show appropriate buttons
+        function initAuthUI() {
+            const guestButtons = document.getElementById('guest-buttons');
+            const userButtons = document.getElementById('user-buttons');
+            const userName = document.getElementById('user-name');
+            const user = getUser();
+
+            if (user) {
+                // User is logged in
+                guestButtons.style.display = 'none';
+                userButtons.style.display = 'flex';
+                userName.textContent = user.fullName || 'User';
+            } else {
+                // User is not logged in
+                guestButtons.style.display = 'flex';
+                userButtons.style.display = 'none';
+            }
+        }
+
+        // Initialize auth UI
+        initAuthUI();
+
+        // Fade in announcement board, then auth buttons
         window.addEventListener('load', () => {
             const announcementBoard = document.querySelector('.announcement-board');
-            const enterBtn = document.getElementById('enter-btn');
+            const guestButtons = document.getElementById('guest-buttons');
+            const userButtons = document.getElementById('user-buttons');
 
             // Fade in announcement board first
             setTimeout(() => {
                 announcementBoard.classList.add('visible');
             }, 300);
 
-            // Fade in enter button after 1 second delay
+            // Fade in appropriate auth buttons after 1 second delay
             setTimeout(() => {
-                enterBtn.classList.add('visible');
+                if (isLoggedIn()) {
+                    userButtons.classList.add('visible');
+                } else {
+                    guestButtons.classList.add('visible');
+                }
             }, 1300);
         });
+
+        // Event Listeners for auth buttons
+        document.getElementById('enter-btn').addEventListener('click', startTransition);
+        document.getElementById('enter-btn-user').addEventListener('click', startTransition);
+        document.getElementById('logout-btn').addEventListener('click', logout);
 
     </script>
 </body>
