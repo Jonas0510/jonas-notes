@@ -65,7 +65,7 @@
             top: auto;
             left: auto;
             transform: none;
-            margin-bottom: 25px;
+            margin: 0 auto 25px auto;
             display: block;
         }
 
@@ -1116,6 +1116,24 @@
             // Hide year selection
             yearContainer.style.display = 'none';
             yearContainer.classList.remove('visible');
+
+            // Reset animation state to allow "Enter Website" to work again
+            isTreeFormed = false;
+            isTransitioning = false;
+
+            // Move particles back to galaxy (start) positions
+            const positions = positionsAttribute.array;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
+                positions[i3] = startPositions[i3];
+                positions[i3 + 1] = startPositions[i3 + 1];
+                positions[i3 + 2] = startPositions[i3 + 2];
+            }
+            positionsAttribute.needsUpdate = true;
+
+            // Hide snow and background stars (galaxy state)
+            if (snowGroup) snowGroup.material.opacity = 0;
+            if (bgStarGroup) bgStarGroup.material.uniforms.globalOpacity.value = 0;
 
             // Show announcement board with fade-in
             announcementBoard.style.display = 'block';
