@@ -105,6 +105,50 @@
             to { transform: rotate(360deg); }
         }
 
+        /* First page loading state */
+        .first-page-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .first-page-wrapper.loading-state .pdf-page-canvas {
+            filter: blur(3px);
+            transition: filter 0.3s ease;
+        }
+
+        .first-page-wrapper .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .first-page-wrapper:not(.loading-state) .loading-overlay {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-overlay .spinner {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 15px;
+        }
+
+        .loading-overlay .loading-text {
+            color: #fff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
         /* Chat message styles for future use */
         .chat-message {
             padding: 12px 15px;
@@ -527,6 +571,7 @@
         let totalPages = 0;
         let scale = 1.0;
         let currentPdfName = '';
+        let isLoading = false; // Flag to disable scroll detection during load
 
         // DOM Elements
         const pdfContainer = document.getElementById('pdf-container');
@@ -547,6 +592,9 @@
             currentPdfName = pdfName;
             const pdfPath = getPdfPath(year, moduleName, pdfName);
 
+            // Set loading state
+            isLoading = true;
+
             // Update UI
             pdfSelect.value = pdfName;
             updateTocHighlight(pdfName);
@@ -562,14 +610,41 @@
                 currentPage = 1;
                 updatePageInfo();
 
-                // Render all pages
+                // Clear container
                 renderContainer.innerHTML = '';
-                for (let i = 1; i <= totalPages; i++) {
+
+                // Render first page with loading overlay
+                const firstPageWrapper = document.createElement('div');
+                firstPageWrapper.className = 'first-page-wrapper loading-state';
+                firstPageWrapper.id = 'first-page-wrapper';
+                renderContainer.appendChild(firstPageWrapper);
+
+                // Render the first page canvas
+                await renderPageToContainer(1, firstPageWrapper);
+
+                // Add loading overlay to first page
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'loading-overlay';
+                loadingOverlay.innerHTML = `
+                    <div class="spinner"></div>
+                    <span class="loading-text">Loading pages...</span>
+                `;
+                firstPageWrapper.appendChild(loadingOverlay);
+
+                // Render remaining pages in background
+                for (let i = 2; i <= totalPages; i++) {
                     await renderPage(i);
                 }
 
+                // Remove loading state from first page
+                firstPageWrapper.classList.remove('loading-state');
+
+                // Loading complete
+                isLoading = false;
+
             } catch (error) {
                 console.error('Error loading PDF:', error);
+                isLoading = false;
                 renderContainer.innerHTML = `
                     <div class="loading">
                         <p style="color: #ff6b6b;">Error loading PDF</p>
@@ -586,6 +661,18 @@
 
         // Render a single page with high DPI support and mobile scaling
         async function renderPage(pageNumber) {
+            const canvas = await createPageCanvas(pageNumber);
+            renderContainer.appendChild(canvas);
+        }
+
+        // Render a page to a specific container (for first page wrapper)
+        async function renderPageToContainer(pageNumber, container) {
+            const canvas = await createPageCanvas(pageNumber);
+            container.appendChild(canvas);
+        }
+
+        // Create a canvas for a page (shared logic)
+        async function createPageCanvas(pageNumber) {
             const page = await pdfDoc.getPage(pageNumber);
 
             // Get device pixel ratio for sharp rendering
@@ -621,17 +708,43 @@
             };
 
             await page.render(renderContext).promise;
-            renderContainer.appendChild(canvas);
+            return canvas;
         }
 
         // Re-render all pages with new scale
         async function reRenderAllPages() {
             if (!pdfDoc) return;
 
+            isLoading = true;
             renderContainer.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                await renderPage(i);
+
+            // Render first page with loading overlay
+            const firstPageWrapper = document.createElement('div');
+            firstPageWrapper.className = 'first-page-wrapper loading-state';
+            firstPageWrapper.id = 'first-page-wrapper';
+            renderContainer.appendChild(firstPageWrapper);
+
+            await renderPageToContainer(1, firstPageWrapper);
+
+            // Add loading overlay if there are more pages
+            if (totalPages > 1) {
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'loading-overlay';
+                loadingOverlay.innerHTML = `
+                    <div class="spinner"></div>
+                    <span class="loading-text">Loading pages...</span>
+                `;
+                firstPageWrapper.appendChild(loadingOverlay);
+
+                // Render remaining pages
+                for (let i = 2; i <= totalPages; i++) {
+                    await renderPage(i);
+                }
+
+                firstPageWrapper.classList.remove('loading-state');
             }
+
+            isLoading = false;
         }
 
         // Update page info display
@@ -701,6 +814,9 @@
 
         // Track current page on scroll
         pdfContainer.addEventListener('scroll', () => {
+            // Skip scroll detection while loading to prevent buggy page counter
+            if (isLoading) return;
+
             const canvases = renderContainer.querySelectorAll('canvas');
             const containerRect = pdfContainer.getBoundingClientRect();
 
