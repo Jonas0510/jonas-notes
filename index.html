@@ -1127,7 +1127,7 @@
         }
 
         // Check auth state and show appropriate buttons
-        function updateAuthUI() {
+        function updateAuthUI(withFadeIn = false) {
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
             const userName = document.getElementById('user-name');
@@ -1135,12 +1135,20 @@
             if (isLoggedIn()) {
                 // User is logged in with complete profile
                 guestButtons.style.display = 'none';
+                guestButtons.classList.remove('visible');
                 userButtons.style.display = 'flex';
                 userName.textContent = currentUserData.fullName || currentUser.displayName || 'User';
+                if (withFadeIn) {
+                    userButtons.classList.add('visible');
+                }
             } else {
                 // User is not logged in
                 guestButtons.style.display = 'flex';
                 userButtons.style.display = 'none';
+                userButtons.classList.remove('visible');
+                if (withFadeIn) {
+                    guestButtons.classList.add('visible');
+                }
             }
         }
 
@@ -1284,9 +1292,9 @@
                     currentUserData = { fullName: fullName, email: user.email };
                     pendingNewUser = null;
 
-                    // Close modal and update UI
+                    // Close modal and update UI with fade-in
                     nameModal.classList.remove('active');
-                    updateAuthUI();
+                    updateAuthUI(true);
                 }
             } catch (error) {
                 nameError.textContent = 'Error saving profile. Please try again.';
