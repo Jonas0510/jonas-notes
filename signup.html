@@ -70,6 +70,11 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
+        .social-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .social-btn svg {
             width: 20px;
             height: 20px;
@@ -245,6 +250,75 @@
             text-decoration: none;
         }
 
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Google Profile Complete Form (for Google sign-up users) */
+        .profile-complete {
+            display: none;
+        }
+
+        .profile-complete.visible {
+            display: block;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .profile-details {
+            flex: 1;
+        }
+
+        .profile-name {
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+
+        .profile-email {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
         @media (max-width: 480px) {
             .signup-container {
                 padding: 30px 20px;
@@ -259,6 +333,10 @@
             }
         }
     </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -266,164 +344,305 @@
     <a href="index.html" class="btn-back">Back</a>
 
     <div class="signup-container">
-        <div class="signup-header">
-            <h1 class="signup-title">Create Account</h1>
-            <p class="signup-subtitle">Join Jonas Academy to access study materials</p>
-        </div>
-
-        <!-- Social Login Options -->
-        <div class="social-login">
-            <button type="button" class="social-btn" id="google-signup">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                Continue with Google
-            </button>
-        </div>
-
-        <div class="divider">
-            <div class="divider-line"></div>
-            <span class="divider-text">or sign up with email</span>
-            <div class="divider-line"></div>
-        </div>
-
-        <!-- Signup Form -->
-        <form id="signup-form" class="signup-form">
-            <div class="form-group">
-                <label>Full Name <span class="required">*</span></label>
-                <input type="text" id="fullName" placeholder="Enter your full name" required>
+        <!-- Initial Sign Up View -->
+        <div id="signup-view">
+            <div class="signup-header">
+                <h1 class="signup-title">Create Account</h1>
+                <p class="signup-subtitle">Join Jonas Academy to access study materials</p>
             </div>
 
-            <div class="form-group">
-                <label>Email <span class="required">*</span></label>
-                <input type="email" id="email" placeholder="Enter your email" required>
+            <!-- Social Login Options -->
+            <div class="social-login">
+                <button type="button" class="social-btn" id="google-signup">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Continue with Google
+                </button>
             </div>
 
-            <div class="form-group">
-                <label>Password <span class="required">*</span></label>
-                <input type="password" id="password" placeholder="Create a password" minlength="6" required>
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">or sign up with email</span>
+                <div class="divider-line"></div>
             </div>
 
-            <div class="form-row">
+            <!-- Signup Form -->
+            <form id="signup-form" class="signup-form">
                 <div class="form-group">
-                    <label>Date of Birth <span class="required">*</span></label>
-                    <input type="date" id="dob" required>
+                    <label>Full Name <span class="required">*</span></label>
+                    <input type="text" id="fullName" placeholder="Enter your full name" required>
                 </div>
+
                 <div class="form-group">
-                    <label>Age <span class="required">*</span></label>
-                    <input type="number" id="age" placeholder="Age" min="13" max="120" required>
+                    <label>Email <span class="required">*</span></label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password <span class="required">*</span></label>
+                    <input type="password" id="password" placeholder="Create a password (min 6 chars)" minlength="6" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Birth <span class="required">*</span></label>
+                        <input type="date" id="dob" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age <span class="required">*</span></label>
+                        <input type="number" id="age" placeholder="Age" min="13" max="120" required>
+                    </div>
+                </div>
+
+                <p id="form-error" class="form-error"></p>
+
+                <p class="terms">
+                    By signing up, you agree to our Terms of Service and Privacy Policy.
+                </p>
+
+                <button type="submit" class="btn-submit" id="submit-btn">Create Account</button>
+            </form>
+
+            <div class="signup-footer">
+                <p>Already have an account? <a href="login.html">Log in</a></p>
+            </div>
+        </div>
+
+        <!-- Complete Profile View (for Google sign-up) -->
+        <div id="profile-complete-view" class="profile-complete">
+            <div class="signup-header">
+                <h1 class="signup-title">Complete Profile</h1>
+                <p class="signup-subtitle">Please provide additional information</p>
+            </div>
+
+            <div class="profile-info">
+                <div class="profile-avatar" id="profile-avatar">
+                    <!-- Avatar or initials will be set dynamically -->
+                </div>
+                <div class="profile-details">
+                    <div class="profile-name" id="profile-name">User</div>
+                    <div class="profile-email" id="profile-email">email@example.com</div>
                 </div>
             </div>
 
-            <p id="form-error" class="form-error"></p>
+            <form id="complete-profile-form" class="signup-form">
+                <div class="form-group">
+                    <label>Full Name <span class="required">*</span></label>
+                    <input type="text" id="google-fullName" placeholder="Enter your full name" required>
+                </div>
 
-            <p class="terms">
-                By signing up, you agree to our Terms of Service and Privacy Policy.
-            </p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Birth <span class="required">*</span></label>
+                        <input type="date" id="google-dob" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age <span class="required">*</span></label>
+                        <input type="number" id="google-age" placeholder="Age" min="13" max="120" required>
+                    </div>
+                </div>
 
-            <button type="submit" class="btn-submit">Create Account</button>
-        </form>
+                <p id="google-form-error" class="form-error"></p>
 
-        <div class="signup-footer">
-            <p>Already have an account? <a href="login.html">Log in</a></p>
+                <button type="submit" class="btn-submit" id="complete-btn">Complete Sign Up</button>
+            </form>
         </div>
     </div>
 
+    <script src="scripts/firebase-config.js"></script>
     <script>
+        let pendingGoogleUser = null;
+
         // Auto-calculate age from DOB
-        document.getElementById('dob').addEventListener('change', function() {
-            const dob = new Date(this.value);
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const monthDiff = today.getMonth() - dob.getMonth();
+        function setupAgeCalculation(dobInputId, ageInputId) {
+            document.getElementById(dobInputId).addEventListener('change', function() {
+                const dob = new Date(this.value);
+                const today = new Date();
+                let age = today.getFullYear() - dob.getFullYear();
+                const monthDiff = today.getMonth() - dob.getMonth();
 
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-                age--;
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                    age--;
+                }
+
+                if (age >= 0 && age <= 120) {
+                    document.getElementById(ageInputId).value = age;
+                }
+            });
+        }
+
+        setupAgeCalculation('dob', 'age');
+        setupAgeCalculation('google-dob', 'google-age');
+
+        // Show error message
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        // Hide error message
+        function hideError(elementId) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.classList.remove('visible');
+        }
+
+        // Set button loading state
+        function setButtonLoading(buttonId, isLoading, originalText) {
+            const btn = document.getElementById(buttonId);
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span>';
+            } else {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
+        }
 
-            if (age >= 0 && age <= 120) {
-                document.getElementById('age').value = age;
-            }
-        });
-
-        // Form submission
-        document.getElementById('signup-form').addEventListener('submit', function(e) {
+        // Email/Password Sign Up
+        document.getElementById('signup-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            hideError('form-error');
 
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const dob = document.getElementById('dob').value;
             const age = parseInt(document.getElementById('age').value);
-            const errorEl = document.getElementById('form-error');
 
             // Validation
             if (fullName.length < 2) {
-                errorEl.textContent = 'Please enter your full name';
-                errorEl.classList.add('visible');
+                showError('form-error', 'Please enter your full name');
                 return;
             }
 
             if (age < 13) {
-                errorEl.textContent = 'You must be at least 13 years old to sign up';
-                errorEl.classList.add('visible');
+                showError('form-error', 'You must be at least 13 years old to sign up');
                 return;
             }
 
             if (password.length < 6) {
-                errorEl.textContent = 'Password must be at least 6 characters';
-                errorEl.classList.add('visible');
+                showError('form-error', 'Password must be at least 6 characters');
                 return;
             }
 
-            // Check if email already exists
-            const existingUsers = JSON.parse(localStorage.getItem('jonasnotes_users') || '[]');
-            if (existingUsers.some(u => u.email === email)) {
-                errorEl.textContent = 'An account with this email already exists';
-                errorEl.classList.add('visible');
-                return;
+            setButtonLoading('submit-btn', true, 'Create Account');
+
+            const result = await signUpWithEmail(email, password, fullName, dob, age);
+
+            if (result.success) {
+                window.location.href = 'index.html';
+            } else {
+                setButtonLoading('submit-btn', false, 'Create Account');
+                showError('form-error', result.error);
             }
-
-            // Create user object
-            const user = {
-                id: Date.now(),
-                fullName: fullName,
-                email: email,
-                password: password, // In production, this should be hashed!
-                dob: dob,
-                age: age,
-                createdAt: new Date().toISOString()
-            };
-
-            // Save to users list
-            existingUsers.push(user);
-            localStorage.setItem('jonasnotes_users', JSON.stringify(existingUsers));
-
-            // Log user in
-            const sessionUser = {
-                id: user.id,
-                fullName: user.fullName,
-                email: user.email,
-                age: user.age
-            };
-            localStorage.setItem('jonasnotes_user', JSON.stringify(sessionUser));
-
-            // Redirect to home
-            window.location.href = 'index.html';
         });
 
-        // Google Sign Up (placeholder - would need Firebase or similar)
-        document.getElementById('google-signup').addEventListener('click', function() {
-            alert('Google Sign Up will be available soon. Please use email signup for now.');
+        // Google Sign Up
+        document.getElementById('google-signup').addEventListener('click', async function() {
+            this.disabled = true;
+
+            const result = await signInWithGoogle();
+
+            if (result.success) {
+                if (result.isNewUser) {
+                    // New user - need to complete profile
+                    pendingGoogleUser = result.user;
+                    showCompleteProfileView(result.user);
+                } else {
+                    // Existing user - redirect to home
+                    window.location.href = 'index.html';
+                }
+            } else {
+                this.disabled = false;
+                showError('form-error', result.error);
+            }
+        });
+
+        // Show complete profile view for Google users
+        function showCompleteProfileView(user) {
+            document.getElementById('signup-view').style.display = 'none';
+            document.getElementById('profile-complete-view').classList.add('visible');
+
+            // Set user info
+            const avatarEl = document.getElementById('profile-avatar');
+            if (user.photoURL) {
+                avatarEl.innerHTML = `<img src="${user.photoURL}" alt="Avatar">`;
+            } else {
+                avatarEl.textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+            }
+
+            document.getElementById('profile-name').textContent = user.displayName || 'User';
+            document.getElementById('profile-email').textContent = user.email;
+
+            // Pre-fill name if available
+            if (user.displayName) {
+                document.getElementById('google-fullName').value = user.displayName;
+            }
+        }
+
+        // Complete Profile Form (for Google users)
+        document.getElementById('complete-profile-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError('google-form-error');
+
+            if (!pendingGoogleUser) {
+                showError('google-form-error', 'Session expired. Please try again.');
+                return;
+            }
+
+            const fullName = document.getElementById('google-fullName').value.trim();
+            const dob = document.getElementById('google-dob').value;
+            const age = parseInt(document.getElementById('google-age').value);
+
+            // Validation
+            if (fullName.length < 2) {
+                showError('google-form-error', 'Please enter your full name');
+                return;
+            }
+
+            if (age < 13) {
+                showError('google-form-error', 'You must be at least 13 years old to sign up');
+                return;
+            }
+
+            setButtonLoading('complete-btn', true, 'Complete Sign Up');
+
+            // Save user data to Firestore
+            const saved = await saveUserData(pendingGoogleUser.uid, {
+                fullName: fullName,
+                email: pendingGoogleUser.email,
+                dob: dob,
+                age: age,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            if (saved) {
+                // Update display name if different
+                if (pendingGoogleUser.displayName !== fullName) {
+                    await pendingGoogleUser.updateProfile({ displayName: fullName });
+                }
+                window.location.href = 'index.html';
+            } else {
+                setButtonLoading('complete-btn', false, 'Complete Sign Up');
+                showError('google-form-error', 'Failed to save profile. Please try again.');
+            }
         });
 
         // Check if already logged in
-        if (localStorage.getItem('jonasnotes_user')) {
-            window.location.href = 'index.html';
-        }
+        onAuthStateChange(async (user) => {
+            if (user && !pendingGoogleUser) {
+                // Check if user has completed profile
+                const userData = await getUserData(user.uid);
+                if (userData && userData.fullName) {
+                    window.location.href = 'index.html';
+                }
+            }
+        });
     </script>
 </body>
 </html>

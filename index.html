@@ -395,6 +395,11 @@
     <script src="scripts/modules.js"></script>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -921,33 +926,34 @@
         // Load announcements on page load
         loadAnnouncements();
 
-        // --- Authentication Functions ---
-        function getUser() {
-            const userJson = localStorage.getItem('jonasnotes_user');
-            return userJson ? JSON.parse(userJson) : null;
-        }
+        // --- Authentication Functions (Firebase) ---
+        // Firebase config is loaded from scripts/firebase-config.js
+
+        let currentUser = null;
+        let currentUserData = null;
 
         function isLoggedIn() {
-            return getUser() !== null;
+            return currentUser !== null && currentUserData !== null && currentUserData.fullName;
         }
 
-        function logout() {
-            localStorage.removeItem('jonasnotes_user');
+        async function logout() {
+            await signOutUser();
+            currentUser = null;
+            currentUserData = null;
             location.reload();
         }
 
         // Check auth state and show appropriate buttons
-        function initAuthUI() {
+        function updateAuthUI() {
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
             const userName = document.getElementById('user-name');
-            const user = getUser();
 
-            if (user) {
-                // User is logged in
+            if (isLoggedIn()) {
+                // User is logged in with complete profile
                 guestButtons.style.display = 'none';
                 userButtons.style.display = 'flex';
-                userName.textContent = user.fullName || 'User';
+                userName.textContent = currentUserData.fullName || currentUser.displayName || 'User';
             } else {
                 // User is not logged in
                 guestButtons.style.display = 'flex';
@@ -955,11 +961,8 @@
             }
         }
 
-        // Initialize auth UI
-        initAuthUI();
-
         // Fade in announcement board, then auth buttons
-        window.addEventListener('load', () => {
+        function fadeInUI() {
             const announcementBoard = document.querySelector('.announcement-board');
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
@@ -977,13 +980,41 @@
                     guestButtons.classList.add('visible');
                 }
             }, 1300);
-        });
+        }
 
         // Event Listeners for auth buttons
         document.getElementById('enter-btn').addEventListener('click', startTransition);
         document.getElementById('enter-btn-user').addEventListener('click', startTransition);
         document.getElementById('logout-btn').addEventListener('click', logout);
 
+    </script>
+
+    <!-- Firebase Config -->
+    <script src="scripts/firebase-config.js"></script>
+
+    <script>
+        // Listen to Firebase auth state changes
+        onAuthStateChange(async (user) => {
+            if (user) {
+                currentUser = user;
+                // Get user data from Firestore
+                currentUserData = await getUserData(user.uid);
+
+                // Check if profile is complete
+                if (!currentUserData || !currentUserData.fullName) {
+                    // User needs to complete profile - redirect to signup
+                    window.location.href = 'signup.html?complete_profile=true';
+                    return;
+                }
+            } else {
+                currentUser = null;
+                currentUserData = null;
+            }
+
+            // Update UI after auth state is determined
+            updateAuthUI();
+            fadeInUI();
+        });
     </script>
 </body>
 </html>

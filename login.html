@@ -223,6 +223,11 @@
     </style>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <a href="index.html" class="btn-back">Back</a>
@@ -274,49 +279,101 @@
         </div>
     </div>
 
+    <!-- Firebase Config -->
+    <script src="scripts/firebase-config.js"></script>
+
     <script>
-        // Form submission
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        const errorEl = document.getElementById('form-error');
+        const submitBtn = document.querySelector('.btn-submit');
+
+        function showError(message) {
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function hideError() {
+            errorEl.classList.remove('visible');
+        }
+
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.textContent = loading ? 'Logging in...' : 'Log In';
+        }
+
+        // Form submission - Email/Password Login
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            hideError();
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('form-error');
 
-            // Get users from storage
-            const users = JSON.parse(localStorage.getItem('jonasnotes_users') || '[]');
-
-            // Find user
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (!user) {
-                errorEl.textContent = 'Invalid email or password';
-                errorEl.classList.add('visible');
+            if (!email || !password) {
+                showError('Please fill in all fields');
                 return;
             }
 
-            // Log user in
-            const sessionUser = {
-                id: user.id,
-                fullName: user.fullName,
-                email: user.email,
-                age: user.age
-            };
-            localStorage.setItem('jonasnotes_user', JSON.stringify(sessionUser));
+            setLoading(true);
 
-            // Redirect to home
-            window.location.href = 'index.html';
+            const result = await signInWithEmail(email, password);
+
+            if (result.success) {
+                // Redirect to home
+                window.location.href = 'index.html';
+            } else {
+                setLoading(false);
+                // Parse Firebase error messages
+                let errorMessage = result.error;
+                if (errorMessage.includes('user-not-found')) {
+                    errorMessage = 'No account found with this email';
+                } else if (errorMessage.includes('wrong-password')) {
+                    errorMessage = 'Incorrect password';
+                } else if (errorMessage.includes('invalid-email')) {
+                    errorMessage = 'Invalid email address';
+                } else if (errorMessage.includes('too-many-requests')) {
+                    errorMessage = 'Too many attempts. Please try again later';
+                }
+                showError(errorMessage);
+            }
         });
 
-        // Google Login (placeholder - would need Firebase or similar)
-        document.getElementById('google-login').addEventListener('click', function() {
-            alert('Google Login will be available soon. Please use email login for now.');
+        // Google Login
+        document.getElementById('google-login').addEventListener('click', async function() {
+            hideError();
+
+            const result = await signInWithGoogle();
+
+            if (result.success) {
+                if (result.isNewUser) {
+                    // New Google user needs to complete profile on signup page
+                    window.location.href = 'signup.html?complete_profile=true';
+                } else {
+                    // Existing user - redirect to home
+                    window.location.href = 'index.html';
+                }
+            } else {
+                let errorMessage = result.error;
+                if (errorMessage.includes('popup-closed-by-user')) {
+                    errorMessage = 'Sign-in cancelled';
+                } else if (errorMessage.includes('popup-blocked')) {
+                    errorMessage = 'Popup was blocked. Please allow popups for this site';
+                }
+                showError(errorMessage);
+            }
         });
 
-        // Check if already logged in
-        if (localStorage.getItem('jonasnotes_user')) {
-            window.location.href = 'index.html';
-        }
+        // Check if already logged in via Firebase
+        onAuthStateChange(async (user) => {
+            if (user) {
+                // User is signed in, check if profile is complete
+                const userData = await getUserData(user.uid);
+                if (userData && userData.fullName) {
+                    // Profile is complete, redirect to home
+                    window.location.href = 'index.html';
+                }
+                // If no userData, user needs to complete profile (will be handled on signup page)
+            }
+        });
     </script>
 </body>
 </html>
