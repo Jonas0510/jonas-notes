@@ -1017,8 +1017,24 @@
             document.getElementById('guest-buttons').style.display = 'none';
             document.getElementById('user-buttons').style.display = 'none';
 
-            // Set tree as formed and show modules directly
+            // Set tree as formed
             isTreeFormed = true;
+
+            // Move particles directly to tree shape
+            const positions = positionsAttribute.array;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
+                positions[i3] = targetPositions[i3];
+                positions[i3 + 1] = targetPositions[i3 + 1];
+                positions[i3 + 2] = targetPositions[i3 + 2];
+            }
+            positionsAttribute.needsUpdate = true;
+
+            // Reset rotation to tree view
+            group.rotation.x = 0;
+            group.rotation.z = 0;
+
+            // Show snow and background stars
             if (snowGroup) snowGroup.material.opacity = 0.6;
             if (bgStarGroup) bgStarGroup.material.uniforms.globalOpacity.value = 0.8;
 
