@@ -1157,6 +1157,9 @@
 
         // Check auth state and show appropriate buttons
         function updateAuthUI(withFadeIn = false) {
+            // Skip if returning from viewer (UI should stay hidden)
+            if (returnToYear) return;
+
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
             const userName = document.getElementById('user-name');
@@ -1183,6 +1186,9 @@
 
         // Fade in announcement board, then auth buttons
         function fadeInUI() {
+            // Skip if returning from viewer (UI should stay hidden)
+            if (returnToYear) return;
+
             const announcementBoard = document.querySelector('.announcement-board');
             const guestButtons = document.getElementById('guest-buttons');
             const userButtons = document.getElementById('user-buttons');
