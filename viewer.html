@@ -263,9 +263,10 @@
                 flex-shrink: 0;
             }
 
-            #page-info {
-                font-size: 0.75rem !important;
-                white-space: nowrap;
+            .btn-upgrade {
+                padding: 6px 10px;
+                font-size: 0.7rem;
+                margin-right: 5px;
             }
 
             /* Adjust main area for mobile header */
@@ -322,6 +323,26 @@
         .btn-report:hover {
             background: rgba(255, 100, 100, 0.3);
             box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
+        }
+
+        /* Upgrade Button */
+        .btn-upgrade {
+            background: rgba(255, 204, 0, 0.2);
+            border: 1px solid rgba(255, 204, 0, 0.5);
+            color: #ffcc00;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-upgrade:hover {
+            background: rgba(255, 204, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
         }
 
         /* Report Modal */
@@ -470,7 +491,7 @@
             </select>
         </div>
         <div class="header-right">
-            <span id="page-info" style="color: var(--text-muted); font-size: 0.85rem;">Page 1 of 1</span>
+            <a href="pricing.html" class="btn-upgrade">Upgrade</a>
             <button id="report-btn" class="btn-report">Report</button>
         </div>
     </div>
@@ -623,7 +644,6 @@
         const renderContainer = document.getElementById('pdf-render-container');
         const pageNum = document.getElementById('page-num');
         const pageCount = document.getElementById('page-count');
-        const pageInfo = document.getElementById('page-info');
         const zoomReset = document.getElementById('zoom-reset');
 
         // Disable right-click on PDF container
@@ -769,7 +789,6 @@
         function updatePageInfo() {
             pageNum.textContent = currentPage;
             pageCount.textContent = totalPages;
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
         }
 
         // Update TOC highlight
