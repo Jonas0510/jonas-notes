@@ -8,6 +8,10 @@
     <script src="scripts/modules.js"></script>
     <!-- PDF.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         /* Additional viewer-specific styles */
         body {
@@ -103,6 +107,79 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* Download Button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(136, 204, 255, 0.2);
+            border: 1px solid rgba(136, 204, 255, 0.5);
+            color: #88ccff;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover:not(:disabled) {
+            background: rgba(136, 204, 255, 0.3);
+            box-shadow: 0 0 15px rgba(136, 204, 255, 0.3);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(128, 128, 128, 0.2);
+            border-color: rgba(128, 128, 128, 0.5);
+            color: #888;
+        }
+
+        .download-btn:disabled:hover {
+            background: rgba(128, 128, 128, 0.2);
+            box-shadow: none;
+        }
+
+        /* Tooltip for disabled button */
+        .download-btn-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .download-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .download-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .download-btn:disabled:hover + .download-tooltip {
+            visibility: visible;
+            opacity: 1;
         }
 
         /* Chat message styles for future use */
@@ -447,6 +524,18 @@
                 <button id="prev-page" title="Previous Page">Prev</button>
                 <span id="page-num">1</span> / <span id="page-count">1</span>
                 <button id="next-page" title="Next Page">Next</button>
+                <span>|</span>
+                <span class="download-btn-wrapper">
+                    <button id="download-btn" class="download-btn" title="Download PDF">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download
+                    </button>
+                    <span class="download-tooltip">Upgrade to Plus or Pro to download PDFs</span>
+                </span>
             </div>
 
             <!-- PDF Render Area -->
@@ -870,6 +959,50 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && reportModal.classList.contains('active')) {
                 reportModal.classList.remove('active');
+            }
+        });
+    </script>
+
+    <!-- Firebase Config -->
+    <script src="scripts/firebase-config.js"></script>
+
+    <script>
+        // Download functionality with tier checking
+        const downloadBtn = document.getElementById('download-btn');
+        let userTier = 'free'; // Default to free
+
+        // Check user tier on page load
+        onAuthStateChange(async (user) => {
+            if (user) {
+                const userData = await getUserData(user.uid);
+                if (userData && userData.tier) {
+                    userTier = userData.tier;
+                } else {
+                    userTier = 'free';
+                }
+            } else {
+                userTier = 'free';
+            }
+
+            // Enable/disable download button based on tier
+            if (userTier === 'plus' || userTier === 'pro') {
+                downloadBtn.disabled = false;
+            } else {
+                downloadBtn.disabled = true;
+            }
+        });
+
+        // Download button click handler
+        downloadBtn.addEventListener('click', () => {
+            if (userTier === 'plus' || userTier === 'pro') {
+                // Download the current PDF
+                const pdfPath = getPdfPath(year, moduleName, currentPdfName);
+                const link = document.createElement('a');
+                link.href = pdfPath;
+                link.download = currentPdfName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         });
     </script>

@@ -53,6 +53,10 @@ async function getUserData(uid) {
 // Save user data to Firestore
 async function saveUserData(uid, userData) {
     try {
+        // Set default tier to 'free' if not specified
+        if (!userData.tier) {
+            userData.tier = 'free';
+        }
         await db.collection('users').doc(uid).set(userData, { merge: true });
         return true;
     } catch (error) {
