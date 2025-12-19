@@ -474,6 +474,128 @@
             padding: 20px;
             display: none;
         }
+
+        /* Newsletter Popup */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup-content {
+            background: #1a1a1a;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 35px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .popup-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .popup-title {
+            color: #fff;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .popup-description {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .popup-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-subscribe {
+            background: rgba(136, 204, 255, 0.2);
+            border: 1px solid rgba(136, 204, 255, 0.5);
+            color: #88ccff;
+            padding: 14px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-subscribe:hover {
+            background: rgba(136, 204, 255, 0.3);
+            box-shadow: 0 0 20px rgba(136, 204, 255, 0.3);
+        }
+
+        .btn-later {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-later:hover {
+            background: var(--glass-bg-hover);
+            color: #fff;
+        }
+
+        .popup-footer {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .popup-footer input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .popup-footer label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .popup-success {
+            display: none;
+        }
+
+        .popup-success.show {
+            display: block;
+        }
+
+        .popup-success .checkmark {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
     </style>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
@@ -520,6 +642,37 @@
             </form>
             <div id="success-message" class="success-message">
                 <p>Thank you! Your report has been submitted.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Newsletter Popup -->
+    <div id="newsletter-popup" class="popup-overlay">
+        <div class="popup-content">
+            <!-- Initial State -->
+            <div id="newsletter-initial">
+                <div class="popup-icon">📧</div>
+                <h3 class="popup-title">Stay Updated!</h3>
+                <p class="popup-description">
+                    Subscribe to our newsletter and be the first to know when new notes are uploaded, features are released, or important announcements are made.
+                </p>
+                <div class="popup-buttons">
+                    <button id="btn-subscribe" class="btn-subscribe">Subscribe to Newsletter</button>
+                    <button id="btn-later" class="btn-later">Maybe Later</button>
+                </div>
+                <div class="popup-footer">
+                    <input type="checkbox" id="never-remind">
+                    <label for="never-remind">Never remind me again</label>
+                </div>
+            </div>
+            <!-- Success State -->
+            <div id="newsletter-success" class="popup-success">
+                <div class="checkmark">✓</div>
+                <h3 class="popup-title">Subscribed!</h3>
+                <p class="popup-description">
+                    You're now subscribed to our newsletter. We'll keep you updated on new notes and features!
+                </p>
+                <button id="btn-close-success" class="btn-later" style="margin-top: 20px;">Close</button>
             </div>
         </div>
     </div>
@@ -1022,6 +1175,107 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+            }
+        });
+
+        // Newsletter Popup Functionality
+        const newsletterPopup = document.getElementById('newsletter-popup');
+        const newsletterInitial = document.getElementById('newsletter-initial');
+        const newsletterSuccess = document.getElementById('newsletter-success');
+        const btnSubscribe = document.getElementById('btn-subscribe');
+        const btnLater = document.getElementById('btn-later');
+        const btnCloseSuccess = document.getElementById('btn-close-success');
+        const neverRemindCheckbox = document.getElementById('never-remind');
+
+        // Check if we should show the newsletter popup
+        async function checkNewsletterPopup(user) {
+            // Check localStorage for "never remind" preference
+            const neverRemind = localStorage.getItem('jonasnotes_newsletter_never_remind') === 'true';
+            if (neverRemind) return;
+
+            // Check if already shown this session
+            const shownThisSession = sessionStorage.getItem('jonasnotes_newsletter_shown') === 'true';
+            if (shownThisSession) return;
+
+            // Check if user is already subscribed (from Firestore)
+            if (user) {
+                const userData = await getUserData(user.uid);
+                if (userData && userData.newsletterSubscribed) {
+                    return; // Already subscribed, don't show popup
+                }
+            }
+
+            // Show the popup after a short delay
+            setTimeout(() => {
+                newsletterInitial.style.display = 'block';
+                newsletterSuccess.classList.remove('show');
+                newsletterPopup.classList.add('active');
+            }, 2000);
+
+            // Mark as shown this session
+            sessionStorage.setItem('jonasnotes_newsletter_shown', 'true');
+        }
+
+        // Close newsletter popup
+        function closeNewsletterPopup() {
+            newsletterPopup.classList.remove('active');
+
+            // Save "never remind" preference if checked
+            if (neverRemindCheckbox.checked) {
+                localStorage.setItem('jonasnotes_newsletter_never_remind', 'true');
+            }
+        }
+
+        // Subscribe to newsletter
+        btnSubscribe.addEventListener('click', async () => {
+            const user = getCurrentUser();
+
+            if (user) {
+                // Save subscription status to Firestore
+                await saveUserData(user.uid, {
+                    newsletterSubscribed: true,
+                    newsletterSubscribedAt: new Date().toISOString()
+                });
+            }
+
+            // Show success state
+            newsletterInitial.style.display = 'none';
+            newsletterSuccess.classList.add('show');
+
+            // Auto-close after 2 seconds
+            setTimeout(() => {
+                closeNewsletterPopup();
+            }, 2500);
+        });
+
+        // Maybe Later button
+        btnLater.addEventListener('click', () => {
+            closeNewsletterPopup();
+        });
+
+        // Close success button
+        btnCloseSuccess.addEventListener('click', () => {
+            closeNewsletterPopup();
+        });
+
+        // Close on overlay click
+        newsletterPopup.addEventListener('click', (e) => {
+            if (e.target === newsletterPopup) {
+                closeNewsletterPopup();
+            }
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && newsletterPopup.classList.contains('active')) {
+                closeNewsletterPopup();
+            }
+        });
+
+        // Trigger newsletter check when user auth state is known
+        onAuthStateChange(async (user) => {
+            if (user) {
+                checkNewsletterPopup(user);
             }
         });
     </script>
