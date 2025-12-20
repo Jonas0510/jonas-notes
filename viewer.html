@@ -596,6 +596,58 @@
             font-size: 3rem;
             margin-bottom: 15px;
         }
+
+        /* Christmas Gift Popup */
+        .christmas-popup .popup-content {
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a1a1a 100%);
+        }
+
+        .christmas-icon {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+        }
+
+        .christmas-title {
+            color: #ffd700;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .christmas-subtitle {
+            color: #ff6b6b;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .btn-claim-gift {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border: none;
+            color: #000;
+            padding: 14px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-claim-gift:hover {
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+            transform: scale(1.02);
+        }
+
+        .christmas-footer {
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-style: italic;
+        }
     </style>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
@@ -674,6 +726,24 @@
                 </p>
                 <button id="btn-close-success" class="btn-later" style="margin-top: 20px;">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Christmas Gift Popup -->
+    <div id="christmas-popup" class="popup-overlay christmas-popup">
+        <div class="popup-content">
+            <div class="christmas-icon">🎄🎁</div>
+            <h3 class="christmas-title">Free Christmas Gift!</h3>
+            <p class="christmas-subtitle">For All Free Users</p>
+            <p class="popup-description">
+                As it's Christmas and exam season, all free users will be temporarily upgraded to <strong style="color: #ffd700;">Plus Account</strong> until <strong>January 12th, 2026</strong>!
+            </p>
+            <p class="popup-description" style="margin-bottom: 20px;">
+                Get your free upgrade by clicking the button below!
+            </p>
+            <a href="pricing.html" class="btn-claim-gift">Claim Your Gift!</a>
+            <button id="btn-christmas-later" class="btn-later" style="margin-top: 15px;">Maybe Later</button>
+            <p class="christmas-footer">Happy Holidays from Jonas Academy!</p>
         </div>
     </div>
 
@@ -1149,6 +1219,16 @@
                 const userData = await getUserData(user.uid);
                 if (userData && userData.tier) {
                     userTier = userData.tier;
+
+                    // Check if tier has expired
+                    if (userData.tierExpiresAt) {
+                        const expiryDate = new Date(userData.tierExpiresAt);
+                        if (new Date() > expiryDate) {
+                            // Tier expired, reset to free
+                            userTier = 'free';
+                            await saveUserData(user.uid, { tier: 'free' });
+                        }
+                    }
                 } else {
                     userTier = 'free';
                 }
@@ -1270,6 +1350,9 @@
             if (e.key === 'Escape' && newsletterPopup.classList.contains('active')) {
                 closeNewsletterPopup();
             }
+            if (e.key === 'Escape' && christmasPopup.classList.contains('active')) {
+                closeChristmasPopup();
+            }
         });
 
         // Trigger newsletter check when user auth state is known
@@ -1278,6 +1361,91 @@
                 checkNewsletterPopup(user);
             }
         });
+
+        // Christmas Gift Popup Functionality
+        const christmasPopup = document.getElementById('christmas-popup');
+        const btnChristmasLater = document.getElementById('btn-christmas-later');
+
+        // Check if we should show the Christmas popup
+        async function checkChristmasPopup(user) {
+            // Only show for free users
+            if (userTier !== 'free') return;
+
+            // Check if already shown this session
+            const shownThisSession = sessionStorage.getItem('jonasnotes_christmas_shown') === 'true';
+            if (shownThisSession) return;
+
+            // Check if user already claimed the gift
+            if (user) {
+                const userData = await getUserData(user.uid);
+                if (userData && userData.christmasGiftClaimed) {
+                    return; // Already claimed
+                }
+            }
+
+            // Show the popup after a delay
+            setTimeout(() => {
+                christmasPopup.classList.add('active');
+            }, 1500);
+
+            // Mark as shown this session
+            sessionStorage.setItem('jonasnotes_christmas_shown', 'true');
+        }
+
+        // Close Christmas popup
+        function closeChristmasPopup() {
+            christmasPopup.classList.remove('active');
+        }
+
+        // Maybe Later button
+        btnChristmasLater.addEventListener('click', () => {
+            closeChristmasPopup();
+        });
+
+        // Close on overlay click
+        christmasPopup.addEventListener('click', (e) => {
+            if (e.target === christmasPopup) {
+                closeChristmasPopup();
+            }
+        });
+
+        // Modify closeNewsletterPopup to trigger Christmas popup check
+        const originalCloseNewsletterPopup = closeNewsletterPopup;
+        closeNewsletterPopup = function() {
+            originalCloseNewsletterPopup();
+            // After newsletter popup closes, check if we should show Christmas popup
+            const user = getCurrentUser();
+            if (user && userTier === 'free') {
+                setTimeout(() => {
+                    checkChristmasPopup(user);
+                }, 500);
+            }
+        };
+
+        // Also check Christmas popup when newsletter was skipped (already subscribed or never remind)
+        const originalCheckNewsletterPopup = checkNewsletterPopup;
+        checkNewsletterPopup = async function(user) {
+            const neverRemind = localStorage.getItem('jonasnotes_newsletter_never_remind') === 'true';
+            const shownThisSession = sessionStorage.getItem('jonasnotes_newsletter_shown') === 'true';
+
+            // If newsletter won't show, check Christmas popup instead
+            if (neverRemind || shownThisSession) {
+                const userData = await getUserData(user.uid);
+                if (userData && userData.newsletterSubscribed) {
+                    // Already subscribed, show Christmas popup
+                    checkChristmasPopup(user);
+                    return;
+                }
+            }
+
+            // Call original function
+            await originalCheckNewsletterPopup(user);
+
+            // If newsletter popup didn't show, check Christmas
+            if (neverRemind || shownThisSession) {
+                checkChristmasPopup(user);
+            }
+        };
     </script>
 </body>
 </html>

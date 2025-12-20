@@ -196,6 +196,76 @@
             box-shadow: none !important;
         }
 
+        .btn-plan:disabled:not(.current-plan) {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .pricing-note {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-style: italic;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .christmas-badge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffd700 100%);
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-plan.christmas {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border: none;
+            color: #000;
+            animation: pulse-gold 2s infinite;
+        }
+
+        .btn-plan.christmas:hover {
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            transform: scale(1.02);
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); }
+        }
+
+        .expiry-note {
+            font-size: 0.75rem;
+            color: #ff6b6b;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Success message */
+        .upgrade-success {
+            display: none;
+            background: rgba(102, 255, 102, 0.1);
+            border: 1px solid rgba(102, 255, 102, 0.5);
+            color: #66ff66;
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .upgrade-success.show {
+            display: block;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .pricing-grid {
@@ -242,7 +312,7 @@
             <!-- Free Plan -->
             <div class="pricing-card">
                 <h2 class="plan-name">Free</h2>
-                <div class="plan-price">$0</div>
+                <div class="plan-price">£0</div>
                 <div class="plan-period">forever</div>
                 <ul class="plan-features">
                     <li class="included">View PDFs on website</li>
@@ -252,14 +322,15 @@
                     <li class="not-included">AI Study Assistant</li>
                     <li class="not-included">Early access to features</li>
                 </ul>
-                <button class="btn-plan free current-plan" disabled>Current Plan</button>
+                <button id="btn-free" class="btn-plan free current-plan" disabled>Current Plan</button>
             </div>
 
             <!-- Plus Plan -->
             <div class="pricing-card featured">
+                <span class="christmas-badge">🎄 Free Christmas Gift!</span>
                 <h2 class="plan-name">Plus</h2>
-                <div class="plan-price">$X</div>
-                <div class="plan-period">coming soon</div>
+                <div class="plan-price">£20</div>
+                <div class="plan-period">lifetime</div>
                 <ul class="plan-features">
                     <li class="included">View PDFs on website</li>
                     <li class="included">Access all study materials</li>
@@ -268,14 +339,18 @@
                     <li class="not-included">AI Study Assistant</li>
                     <li class="not-included">Early access to features</li>
                 </ul>
-                <button class="btn-plan plus" disabled>Coming Soon</button>
+                <button id="btn-plus" class="btn-plan christmas">Claim Free Gift!</button>
+                <p class="expiry-note">Free until January 12th, 2026</p>
+                <div id="plus-success" class="upgrade-success">
+                    ✓ You've been upgraded to Plus! Enjoy downloading PDFs.
+                </div>
             </div>
 
             <!-- Pro Plan -->
             <div class="pricing-card pro">
                 <h2 class="plan-name">Pro</h2>
-                <div class="plan-price">$X</div>
-                <div class="plan-period">coming soon</div>
+                <div class="plan-price">£80</div>
+                <div class="plan-period">lifetime</div>
                 <ul class="plan-features">
                     <li class="included">View PDFs on website</li>
                     <li class="included">Access all study materials</li>
@@ -284,9 +359,107 @@
                     <li class="included">AI Study Assistant</li>
                     <li class="included">Early access to features</li>
                 </ul>
-                <button class="btn-plan pro" disabled>Coming Soon</button>
+                <button id="btn-pro" class="btn-plan pro" disabled>Coming Soon</button>
             </div>
         </div>
+
+        <p class="pricing-note">
+            We use all revenue to improve the website and fund other educational projects.
+            You can also upgrade to a higher tier by contributing to the website!
+        </p>
     </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="scripts/firebase-config.js"></script>
+
+    <script>
+        const btnFree = document.getElementById('btn-free');
+        const btnPlus = document.getElementById('btn-plus');
+        const btnPro = document.getElementById('btn-pro');
+        const plusSuccess = document.getElementById('plus-success');
+
+        let currentUser = null;
+        let userTier = 'free';
+
+        // Check auth state and tier on page load
+        onAuthStateChange(async (user) => {
+            currentUser = user;
+            if (user) {
+                const userData = await getUserData(user.uid);
+                if (userData && userData.tier) {
+                    userTier = userData.tier;
+                }
+                updateButtonStates();
+            }
+        });
+
+        // Update button states based on current tier
+        function updateButtonStates() {
+            // Reset all buttons
+            btnFree.classList.remove('current-plan');
+            btnFree.disabled = false;
+            btnFree.textContent = 'Select';
+
+            if (userTier === 'free') {
+                btnFree.classList.add('current-plan');
+                btnFree.disabled = true;
+                btnFree.textContent = 'Current Plan';
+            } else if (userTier === 'plus') {
+                btnPlus.classList.remove('christmas');
+                btnPlus.classList.add('current-plan');
+                btnPlus.disabled = true;
+                btnPlus.textContent = 'Current Plan';
+                // Hide expiry note and success message if they're showing
+                document.querySelector('.expiry-note').style.display = 'none';
+                document.querySelector('.christmas-badge').style.display = 'none';
+            } else if (userTier === 'pro') {
+                btnPro.classList.add('current-plan');
+                btnPro.disabled = true;
+                btnPro.textContent = 'Current Plan';
+            }
+        }
+
+        // Plus button click handler - Christmas gift upgrade
+        btnPlus.addEventListener('click', async () => {
+            if (!currentUser) {
+                alert('Please sign in first to claim your free gift!');
+                return;
+            }
+
+            if (userTier !== 'free') {
+                return; // Already upgraded
+            }
+
+            try {
+                // Save the upgrade to Firestore
+                await saveUserData(currentUser.uid, {
+                    tier: 'plus',
+                    tierUpgradedAt: new Date().toISOString(),
+                    tierExpiresAt: '2026-01-12T23:59:59.000Z',
+                    christmasGiftClaimed: true
+                });
+
+                // Update local state
+                userTier = 'plus';
+
+                // Show success message
+                plusSuccess.classList.add('show');
+                btnPlus.classList.remove('christmas');
+                btnPlus.classList.add('current-plan');
+                btnPlus.disabled = true;
+                btnPlus.textContent = 'Claimed!';
+
+                // Hide badge
+                document.querySelector('.christmas-badge').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error upgrading:', error);
+                alert('Error claiming gift. Please try again.');
+            }
+        });
+    </script>
 </body>
 </html>
