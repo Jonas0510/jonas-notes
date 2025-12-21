@@ -779,73 +779,78 @@
             return div.innerHTML;
         }
 
-        // Default announcements
-        const DEFAULT_ANNOUNCEMENTS = [
-            { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
-            { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
-            { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }
-        ];
-
-        // Load and display announcements
-        function loadAnnouncements() {
-            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements'));
-
-            // If no announcements in storage, use defaults
-            if (!announcements || announcements.length === 0) {
-                announcements = DEFAULT_ANNOUNCEMENTS;
-                localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
-            }
-
+        // Load and display announcements from Firestore
+        async function loadAnnouncements() {
             const announcementsList = document.getElementById('announcements-list');
+            announcementsList.innerHTML = '<p class="no-announcements">Loading announcements...</p>';
 
-            if (announcements.length === 0) {
-                announcementsList.innerHTML = '<p class="no-announcements">No announcements</p>';
-                return;
+            try {
+                const snapshot = await db.collection('announcements').orderBy('createdAt', 'desc').get();
+
+                if (snapshot.empty) {
+                    announcementsList.innerHTML = '<p class="no-announcements">No announcements</p>';
+                    return;
+                }
+
+                announcementsList.innerHTML = snapshot.docs.map(doc => {
+                    const a = doc.data();
+                    return `
+                        <div class="announcement-card">
+                            <div class="announcement-info">
+                                <span class="announcement-date-badge">${a.date}</span>
+                                <span class="announcement-title-text">${escapeHtml(a.title)}</span>
+                                ${a.subtitle ? `<p class="announcement-subtitle-text">${escapeHtml(a.subtitle)}</p>` : ''}
+                            </div>
+                            <button class="btn-delete" onclick="deleteAnnouncement('${doc.id}')">Delete</button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                announcementsList.innerHTML = '<p class="no-announcements">Error loading announcements</p>';
             }
-
-            announcementsList.innerHTML = announcements.map((a, index) => `
-                <div class="announcement-card">
-                    <div class="announcement-info">
-                        <span class="announcement-date-badge">${a.date}</span>
-                        <span class="announcement-title-text">${escapeHtml(a.title)}</span>
-                        ${a.subtitle ? `<p class="announcement-subtitle-text">${escapeHtml(a.subtitle)}</p>` : ''}
-                    </div>
-                    <button class="btn-delete" onclick="deleteAnnouncement(${index})">Delete</button>
-                </div>
-            `).join('');
         }
 
         // Add announcement form
-        document.getElementById('add-announcement-form').addEventListener('submit', (e) => {
+        document.getElementById('add-announcement-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const date = document.getElementById('announcement-date').value;
             const title = document.getElementById('announcement-title').value;
             const subtitle = document.getElementById('announcement-subtitle').value;
 
-            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements') || '[]');
+            try {
+                await db.collection('announcements').add({
+                    date,
+                    title,
+                    subtitle,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            // Add new announcement at the beginning
-            announcements.unshift({ date, title, subtitle });
+                // Reset form
+                document.getElementById('announcement-date').value = '';
+                document.getElementById('announcement-title').value = '';
+                document.getElementById('announcement-subtitle').value = '';
+                setDefaultDate();
 
-            localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
-
-            // Reset form
-            document.getElementById('announcement-date').value = '';
-            document.getElementById('announcement-title').value = '';
-            document.getElementById('announcement-subtitle').value = '';
-
-            loadAnnouncements();
+                loadAnnouncements();
+            } catch (error) {
+                console.error('Error adding announcement:', error);
+                alert('Failed to add announcement. Please try again.');
+            }
         });
 
         // Delete announcement
-        function deleteAnnouncement(index) {
+        async function deleteAnnouncement(docId) {
             if (!confirm('Are you sure you want to delete this announcement?')) return;
 
-            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements') || '[]');
-            announcements.splice(index, 1);
-            localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
-            loadAnnouncements();
+            try {
+                await db.collection('announcements').doc(docId).delete();
+                loadAnnouncements();
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+                alert('Failed to delete announcement. Please try again.');
+            }
         }
 
         // Set today's date as default

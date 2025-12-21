@@ -131,6 +131,10 @@
             }
         }
     </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="scripts/firebase-config.js"></script>
     <!-- Vercel Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -147,38 +151,33 @@
     </div>
 
     <script>
-        const DEFAULT_ANNOUNCEMENTS = [
-            { date: '16/12/2024', title: 'Added Fluid Mechanics year 3 notes', subtitle: '' },
-            { date: '15/12/2024', title: 'Fixed website layout issues on phone', subtitle: '' },
-            { date: '14/12/2024', title: 'Added environmental engineering year 3 notes', subtitle: '' },
-            { date: '14/12/2024', title: 'Added a report button - do report any errors!', subtitle: '' }
-        ];
-
-        function loadAnnouncements() {
-            let announcements = JSON.parse(localStorage.getItem('jonasnotes_announcements'));
-
-            // If no announcements in storage, use defaults
-            if (!announcements || announcements.length === 0) {
-                announcements = DEFAULT_ANNOUNCEMENTS;
-                localStorage.setItem('jonasnotes_announcements', JSON.stringify(announcements));
-            }
-
+        async function loadAnnouncements() {
             const announcementList = document.getElementById('announcement-list');
 
-            if (announcements.length === 0) {
-                announcementList.innerHTML = '<p class="no-announcements">No announcements yet.</p>';
-                return;
-            }
+            try {
+                const snapshot = await db.collection('announcements').orderBy('createdAt', 'desc').get();
 
-            announcementList.innerHTML = announcements.map(a => `
-                <div class="announcement-card">
-                    <div class="announcement-header">
-                        <span class="announcement-date">${a.date}</span>
-                        <span class="announcement-title">${escapeHtml(a.title)}</span>
-                    </div>
-                    ${a.subtitle ? `<p class="announcement-subtitle">${escapeHtml(a.subtitle)}</p>` : ''}
-                </div>
-            `).join('');
+                if (snapshot.empty) {
+                    announcementList.innerHTML = '<p class="no-announcements">No announcements yet.</p>';
+                    return;
+                }
+
+                announcementList.innerHTML = snapshot.docs.map(doc => {
+                    const a = doc.data();
+                    return `
+                        <div class="announcement-card">
+                            <div class="announcement-header">
+                                <span class="announcement-date">${a.date}</span>
+                                <span class="announcement-title">${escapeHtml(a.title)}</span>
+                            </div>
+                            ${a.subtitle ? `<p class="announcement-subtitle">${escapeHtml(a.subtitle)}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                announcementList.innerHTML = '<p class="no-announcements">Failed to load announcements.</p>';
+            }
         }
 
         function escapeHtml(text) {
