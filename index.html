@@ -1207,8 +1207,7 @@
             return div.innerHTML;
         }
 
-        // Load announcements on page load
-        loadAnnouncements();
+        // loadAnnouncements() is called after firebase-config.js is loaded
 
         // --- Authentication Functions (Firebase) ---
         // Firebase config is loaded from scripts/firebase-config.js
@@ -1298,6 +1297,9 @@
     <script src="scripts/firebase-config.js"></script>
 
     <script>
+        // Load announcements now that Firebase is initialized
+        loadAnnouncements();
+
         // Track if we need to show name modal after Google login
         let pendingNewUser = null;
 
