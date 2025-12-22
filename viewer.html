@@ -1212,10 +1212,12 @@
         // Download functionality with tier checking
         const downloadBtn = document.getElementById('download-btn');
         let userTier = 'free'; // Default to free
+        let currentUserUid = null; // Store current user UID for download tracking
 
         // Check user tier on page load
         onAuthStateChange(async (user) => {
             if (user) {
+                currentUserUid = user.uid;
                 const userData = await getUserData(user.uid);
                 if (userData && userData.tier) {
                     userTier = userData.tier;
@@ -1234,6 +1236,7 @@
                 }
             } else {
                 userTier = 'free';
+                currentUserUid = null;
             }
 
             // Enable/disable download button based on tier
@@ -1245,7 +1248,7 @@
         });
 
         // Download button click handler
-        downloadBtn.addEventListener('click', () => {
+        downloadBtn.addEventListener('click', async () => {
             if (userTier === 'plus' || userTier === 'pro') {
                 // Download the current PDF
                 const pdfPath = getPdfPath(year, moduleName, currentPdfName);
@@ -1255,6 +1258,17 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+
+                // Increment download count in Firestore
+                if (currentUserUid) {
+                    try {
+                        await db.collection('users').doc(currentUserUid).update({
+                            downloadCount: firebase.firestore.FieldValue.increment(1)
+                        });
+                    } catch (error) {
+                        console.error('Error updating download count:', error);
+                    }
+                }
             }
         });
 
