@@ -1239,35 +1239,29 @@
                 currentUserUid = null;
             }
 
-            // Enable/disable download button based on tier
-            if (userTier === 'plus' || userTier === 'pro') {
-                downloadBtn.disabled = false;
-            } else {
-                downloadBtn.disabled = true;
-            }
+            // Enable download button for all tiers
+            downloadBtn.disabled = false;
         });
 
         // Download button click handler
         downloadBtn.addEventListener('click', async () => {
-            if (userTier === 'plus' || userTier === 'pro') {
-                // Download the current PDF
-                const pdfPath = getPdfPath(year, moduleName, currentPdfName);
-                const link = document.createElement('a');
-                link.href = pdfPath;
-                link.download = currentPdfName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Download the current PDF
+            const pdfPath = getPdfPath(year, moduleName, currentPdfName);
+            const link = document.createElement('a');
+            link.href = pdfPath;
+            link.download = currentPdfName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-                // Increment download count in Firestore
-                if (currentUserUid) {
-                    try {
-                        await db.collection('users').doc(currentUserUid).update({
-                            downloadCount: firebase.firestore.FieldValue.increment(1)
-                        });
-                    } catch (error) {
-                        console.error('Error updating download count:', error);
-                    }
+            // Increment download count in Firestore
+            if (currentUserUid) {
+                try {
+                    await db.collection('users').doc(currentUserUid).update({
+                        downloadCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                } catch (error) {
+                    console.error('Error updating download count:', error);
                 }
             }
         });
