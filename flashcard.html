@@ -63,6 +63,83 @@
             display: inline-block;
         }
 
+        /* Selection Page Styles */
+        .selection-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .selection-title {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .flashcard-set {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .flashcard-set:hover {
+            border-color: rgba(136, 204, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .flashcard-set-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .flashcard-set-date {
+            background: rgba(136, 204, 255, 0.2);
+            color: #88ccff;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+        }
+
+        .flashcard-set-new {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81c784;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+        }
+
+        .flashcard-set-title {
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .flashcard-set-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .flashcard-set-count {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            margin-top: 10px;
+        }
+
+        /* Flashcard Page Styles */
+        .flashcard-page {
+            display: none;
+        }
+
+        .flashcard-page.active {
+            display: block;
+        }
+
         .progress-bar {
             width: 100%;
             height: 6px;
@@ -229,6 +306,7 @@
             font-family: 'Courier New', Courier, monospace;
             font-size: 1rem;
             transition: all 0.3s ease;
+            margin: 5px;
         }
 
         .btn-restart:hover {
@@ -268,6 +346,12 @@
                 padding: 10px 20px;
                 font-size: 0.85rem;
             }
+
+            .flashcard-set-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
         }
     </style>
     <!-- Firebase SDKs -->
@@ -280,21 +364,49 @@
 <body>
     <div class="container">
         <div class="header">
-            <a href="index.html" class="btn-back">Back</a>
+            <a href="index.html" class="btn-back" id="back-btn">Back</a>
             <h1 class="page-title">Flashcards</h1>
         </div>
 
         <div class="module-badge">Environmental Engineering - Year 3</div>
 
-        <div id="flashcard-container">
-            <p class="loading">Loading flashcards...</p>
+        <!-- Selection Page -->
+        <div id="selection-page" class="selection-container">
+            <p class="selection-title">Choose a flashcard set:</p>
+
+            <div class="flashcard-set" onclick="startFlashcards('flashcards_env.csv', 'Key Concepts')">
+                <div class="flashcard-set-header">
+                    <span class="flashcard-set-date">3/1/2026</span>
+                </div>
+                <h3 class="flashcard-set-title">Key Concepts</h3>
+                <p class="flashcard-set-desc">AI-generated flashcards covering fundamental environmental engineering concepts and definitions.</p>
+                <p class="flashcard-set-count">78 cards</p>
+            </div>
+
+            <div class="flashcard-set" onclick="startFlashcards('flashcards_env2.csv', 'Past Year Papers (2018-2025)')">
+                <div class="flashcard-set-header">
+                    <span class="flashcard-set-date">5/1/2026</span>
+                    <span class="flashcard-set-new">NEW</span>
+                </div>
+                <h3 class="flashcard-set-title">Past Year Papers (2018-2025)</h3>
+                <p class="flashcard-set-desc">AI-generated flashcards based on past year examination papers from 2018 to 2025.</p>
+                <p class="flashcard-set-count">64 cards</p>
+            </div>
         </div>
 
-        <div id="completion-message" class="completion-message">
-            <div class="completion-icon">🎉</div>
-            <h2 class="completion-title">Well Done!</h2>
-            <p class="completion-text">You've completed all the flashcards for today.</p>
-            <button class="btn-restart" onclick="restartFlashcards()">Start Again</button>
+        <!-- Flashcard Page -->
+        <div id="flashcard-page" class="flashcard-page">
+            <div id="flashcard-container">
+                <p class="loading">Loading flashcards...</p>
+            </div>
+
+            <div id="completion-message" class="completion-message">
+                <div class="completion-icon">🎉</div>
+                <h2 class="completion-title">Well Done!</h2>
+                <p class="completion-text">You've completed all the flashcards in this set.</p>
+                <button class="btn-restart" onclick="restartFlashcards()">Start Again</button>
+                <button class="btn-restart" onclick="backToSelection()">Choose Another Set</button>
+            </div>
         </div>
     </div>
 
@@ -304,6 +416,7 @@
         let currentIndex = 0;
         let completedCount = 0;
         let currentUserUid = null;
+        let currentSetName = '';
 
         // Parse CSV content
         function parseCSV(text) {
@@ -349,10 +462,26 @@
             return cards;
         }
 
-        // Load flashcards from CSV
-        async function loadFlashcards() {
+        // Start flashcards with selected set
+        async function startFlashcards(csvFile, setName) {
+            currentSetName = setName;
+            currentIndex = 0;
+
+            // Show flashcard page, hide selection
+            document.getElementById('selection-page').style.display = 'none';
+            document.getElementById('flashcard-page').classList.add('active');
+            document.getElementById('flashcard-container').style.display = 'block';
+            document.getElementById('completion-message').classList.remove('active');
+
+            // Update back button to go to selection instead of index
+            document.getElementById('back-btn').href = '#';
+            document.getElementById('back-btn').onclick = function(e) {
+                e.preventDefault();
+                backToSelection();
+            };
+
             try {
-                const response = await fetch('flashcards/flashcards_env.csv');
+                const response = await fetch('flashcards/' + csvFile);
                 const text = await response.text();
                 flashcards = parseCSV(text);
 
@@ -370,6 +499,16 @@
             }
         }
 
+        // Back to selection page
+        function backToSelection() {
+            document.getElementById('selection-page').style.display = 'flex';
+            document.getElementById('flashcard-page').classList.remove('active');
+
+            // Reset back button
+            document.getElementById('back-btn').href = 'index.html';
+            document.getElementById('back-btn').onclick = null;
+        }
+
         // Render current flashcard
         function renderFlashcard() {
             if (currentIndex >= flashcards.length) {
@@ -383,7 +522,7 @@
             const progress = ((currentIndex + 1) / flashcards.length) * 100;
 
             document.getElementById('flashcard-container').innerHTML = `
-                <p class="progress-text">Card ${currentIndex + 1} of ${flashcards.length}</p>
+                <p class="progress-text">${currentSetName} - Card ${currentIndex + 1} of ${flashcards.length}</p>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
@@ -464,7 +603,7 @@
             return div.innerHTML;
         }
 
-        // Check auth state and load flashcards
+        // Check auth state
         onAuthStateChange(async (user) => {
             if (user) {
                 currentUserUid = user.uid;
@@ -475,8 +614,6 @@
                     completedCount = userData.flashcardsCompleted;
                 }
             }
-
-            loadFlashcards();
         });
     </script>
 </body>
