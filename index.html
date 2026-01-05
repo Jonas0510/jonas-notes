@@ -1552,13 +1552,27 @@
         const btnFlashcardLater = document.getElementById('btn-flashcard-later');
         const flashcardDontRemindCheckbox = document.getElementById('flashcard-dont-remind-today');
 
+        // Get today's date in YYYY-MM-DD format for reliable comparison
+        function getTodayString() {
+            const now = new Date();
+            return now.getFullYear() + '-' +
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(now.getDate()).padStart(2, '0');
+        }
+
         function checkFlashcardPopup() {
             // Check if user dismissed popup for today
-            const today = new Date().toDateString();
+            const today = getTodayString();
             const dismissedDate = localStorage.getItem('jonasnotes_flashcard_dismissed');
 
+            // Only skip if dismissed TODAY (not older dates)
             if (dismissedDate === today) {
                 return; // Don't show popup today
+            }
+
+            // Clear any old dismissed date
+            if (dismissedDate && dismissedDate !== today) {
+                localStorage.removeItem('jonasnotes_flashcard_dismissed');
             }
 
             // Show the popup after a short delay
@@ -1570,7 +1584,7 @@
         btnFlashcardStart.addEventListener('click', () => {
             // Save "don't remind" preference if checked
             if (flashcardDontRemindCheckbox.checked) {
-                localStorage.setItem('jonasnotes_flashcard_dismissed', new Date().toDateString());
+                localStorage.setItem('jonasnotes_flashcard_dismissed', getTodayString());
             }
             // Navigate to flashcard page
             window.location.href = 'flashcard.html';
@@ -1579,7 +1593,7 @@
         btnFlashcardLater.addEventListener('click', () => {
             // Save "don't remind" preference if checked
             if (flashcardDontRemindCheckbox.checked) {
-                localStorage.setItem('jonasnotes_flashcard_dismissed', new Date().toDateString());
+                localStorage.setItem('jonasnotes_flashcard_dismissed', getTodayString());
             }
             // Close popup
             flashcardPopup.classList.remove('active');
